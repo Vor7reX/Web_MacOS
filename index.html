@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://upload.wikimedia.org https://*.tile.openstreetmap.org https://*.cartocdn.com https://cdn.rawgit.com https://cdnjs.cloudflare.com; connect-src 'self' https://api.open-meteo.com https://nominatim.openstreetmap.org https://unpkg.com; media-src 'self' data:; font-src 'self' data:;">
+  <title>WebOS - macOS Style</title>
+  <link rel="icon" href="assets/icon/general/main.svg" type="image/svg+xml">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <div id="desktop">
+    
+    <div id="top-bar">
+      <div class="top-bar-left">
+        <div class="menu-item" id="apple-menu" style="display: flex; align-items: center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" id="nav-profile-pic" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid rgba(255, 255, 255, 0.3);" alt="Profile" title="Tasto destro per cambiare foto" />
+          <b>WebOS</b>
+          <div class="dropdown" id="apple-dropdown">
+            <div onclick="openSettings()">Impostazioni di Sistema</div>
+            <hr />
+            
+            <div onclick="resetSystem()" style="color: #ff3b30;">Inizializza Sistema...</div>
+            <hr />
+            <div onclick="location.reload()">Riavvia...</div>
+          </div>
+        </div>
+        <span class="menu-item">File</span>
+        <span class="menu-item">Modifica</span>
+        <span class="menu-item">Visualizza</span>
+      </div>
+      
+      <div class="top-bar-right">
+        <div id="top-bar-music-controls" class="mini-player-glass">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 60px;">
+            <button onclick="musicPrev()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:11px; opacity:0.7; padding:0; width: 16px; text-align: center;">⏮</button>
+            <button onclick="musicTogglePlay()" id="mini-play-btn" style="background:none; border:none; color:#fff; cursor:pointer; font-size:13px; padding:0; width: 16px; text-align: center;">▶</button>
+            <button onclick="musicNext()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:11px; opacity:0.7; padding:0; width: 16px; text-align: center;">⏭</button>
+          </div>
+          <div style="width: 1px; height: 14px; background: rgba(255,255,255,0.2); margin: 0 4px;"></div>
+          <div id="mini-music-cover" onclick="restoreMusicApp()" style="width: 18px; height: 18px; border-radius: 3px; background-size: cover; background-position: center; cursor: pointer; flex-shrink: 0;" title="Apri Musica"></div>
+          <span id="mini-music-title" style="font-size: 12px; font-weight: 500; color: #ddd; width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.2px; display: inline-block;" onclick="restoreMusicApp()">--</span>
+        </div>
+        
+        <div id="cc-trigger" style="cursor: pointer; padding: 0 10px; display: flex; align-items: center; z-index: 100000;" title="Centro di Controllo">
+            <img src="assets/icon/general/control.png" style="width: 16px; height: 16px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));" alt="Control Center">
+        </div>
+        <span id="clock">00:00</span>
+      </div>
+    </div>
+
+    <div id="desktop-icons-container"></div>
+
+    <div class="window" id="notes-window" style="display: none; top: 100px; left: 100px">
+      <div class="window-header" id="notes-header">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="notes-window"></button>
+          <button class="control minimize-btn" data-target="notes-window"></button>
+          <button class="control maximize-btn" data-target="notes-window"></button>
+        </div>
+        <span class="window-title" id="editor-title">Nuovo Documento</span>
+      </div>
+      <div class="editor-toolbar">
+        <button onclick="saveCurrentFile()" id="btn-save">💾 Salva</button>
+        <button onclick="copyCurrentFile()">📄 Crea Copia...</button>
+      </div>
+      <div class="window-content" style="flex-direction: column">
+        <textarea id="notes-textarea" placeholder="Inizia a scrivere..."></textarea>
+      </div>
+    </div>
+
+    <div class="window" id="preview-window" style="display: none; top: 120px; left: 200px; width: 600px; height: 450px;">
+      <div class="window-header" id="preview-header">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="preview-window"></button>
+          <button class="control minimize-btn" data-target="preview-window"></button>
+          <button class="control maximize-btn" data-target="preview-window"></button>
+        </div>
+        <span class="window-title" id="preview-title">Anteprima</span>
+      </div>
+      <div class="window-content" style="background-color: #1e1e1e; display: flex; justify-content: center; align-items: center; overflow: hidden; padding: 10px;">
+        <img id="preview-image" src="" alt="Anteprima" style="max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);" />
+      </div>
+    </div>
+
+    <div class="window" id="calc-window" style="display: none; top: 150px; left: 500px; width: 230px; height: 320px;">
+      <div class="window-header" id="calc-header">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="calc-window"></button>
+          <button class="control minimize-btn" data-target="calc-window"></button>
+          <button class="control maximize-btn" data-target="calc-window"></button>
+        </div>
+        <span class="window-title">Calcolatrice</span>
+      </div>
+      <div class="window-content calc-bg">
+        <input type="text" id="calc-display" readonly />
+        <div class="calc-grid">
+          <button class="calc-btn gray-btn" onclick="calcClear()">C</button>
+          <button class="calc-btn gray-btn" onclick="calcInput('+/-')">+/-</button>
+          <button class="calc-btn gray-btn" onclick="calcInput('%')">%</button>
+          <button class="calc-btn op-btn" onclick="calcInput('/')">÷</button>
+          <button class="calc-btn" onclick="calcInput('7')">7</button>
+          <button class="calc-btn" onclick="calcInput('8')">8</button>
+          <button class="calc-btn" onclick="calcInput('9')">9</button>
+          <button class="calc-btn op-btn" onclick="calcInput('*')">×</button>
+          <button class="calc-btn" onclick="calcInput('4')">4</button>
+          <button class="calc-btn" onclick="calcInput('5')">5</button>
+          <button class="calc-btn" onclick="calcInput('6')">6</button>
+          <button class="calc-btn op-btn" onclick="calcInput('-')">−</button>
+          <button class="calc-btn" onclick="calcInput('1')">1</button>
+          <button class="calc-btn" onclick="calcInput('2')">2</button>
+          <button class="calc-btn" onclick="calcInput('3')">3</button>
+          <button class="calc-btn op-btn" onclick="calcInput('+')">+</button>
+          <button class="calc-btn zero-btn" onclick="calcInput('0')">0</button>
+          <button class="calc-btn" onclick="calcInput('.')">.</button>
+          <button class="calc-btn op-btn" onclick="calcCompute()">=</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="window" id="term-window" style="display: none; top: 200px; left: 300px; width: 550px; height: 350px;">
+      <div class="window-header" id="term-header">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="term-window"></button>
+          <button class="control minimize-btn" data-target="term-window"></button>
+          <button class="control maximize-btn" data-target="term-window"></button>
+        </div>
+        <span class="window-title">Terminale — bash</span>
+      </div>
+      <div class="window-content term-bg">
+        <div id="term-output">
+          Last login: <span id="login-time"></span> on ttys000<br />
+          Welcome to WebOS. Type 'help' to see available commands.
+        </div>
+        <div class="term-input-line">
+          <span class="prompt">user@WebOS ~ %</span>
+          <input type="text" id="term-input" autocomplete="off" spellcheck="false" />
+        </div>
+      </div>
+    </div>
+
+    <div class="window" id="finder-window" style="display: none; top: 80px; left: 120px; width: 600px; height: 400px;">
+      <div class="window-header" id="finder-header">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="finder-window"></button>
+          <button class="control minimize-btn" data-target="finder-window"></button>
+          <button class="control maximize-btn" data-target="finder-window"></button>
+        </div>
+        <span class="window-title" id="finder-title">Home</span>
+      </div>
+      <div class="window-content finder-bg" style="padding: 0; flex-direction: row">
+        <div class="finder-sidebar"></div>
+        <div class="finder-main">
+          <div class="finder-toolbar">
+            <button onclick="navigateUp()">⬆️ Su</button>
+            <span id="finder-path-display">/Home</span>
+          </div>
+          <div class="finder-grid" id="finder-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window" id="settings-window" style="display: none; top: 100px; left: 200px; width: 650px; height: 420px;">
+      <div class="window-header" id="settings-header">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="settings-window"></button>
+          <button class="control minimize-btn" data-target="settings-window"></button>
+          <button class="control maximize-btn" data-target="settings-window"></button>
+        </div>
+      </div>
+      <div class="window-content" style="flex-direction: row; background: transparent; padding: 0">
+        <div class="settings-sidebar">
+          <div class="settings-nav-item active" onclick="switchSettingsTab('account')">
+            <img id="sidebar-profile-pic" src="" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px;" alt="Account">Account
+          </div>
+          <div class="settings-nav-item" onclick="switchSettingsTab('general')">
+            <img src="assets/icon/general/settings.png" style="width: 18px; height: 18px; object-fit: contain; vertical-align: middle; margin-right: 8px;" alt="Generali">Generali
+          </div>
+          <div class="settings-nav-item" onclick="switchSettingsTab('display')">
+            <img src="assets/icon/general/monitor.png" style="width: 18px; height: 18px; object-fit: contain; vertical-align: middle; margin-right: 8px;" alt="Display">Display
+          </div>
+          <div class="settings-nav-item" onclick="switchSettingsTab('background')">
+            <img src="assets/icon/general/background.png" style="width: 18px; height: 18px; object-fit: contain; vertical-align: middle; margin-right: 8px;" alt="Sfondo" onerror="this.src='assets/icon/general/file.png'">Sfondo
+          </div>
+          <div class="settings-nav-item" onclick="switchSettingsTab('network')">
+            <img src="assets/icon/general/network.png" style="width: 18px; height: 18px; object-fit: contain; vertical-align: middle; margin-right: 8px;" alt="Rete">Rete
+          </div>
+          <div class="settings-nav-item" onclick="switchSettingsTab('battery')">
+            <img src="assets/icon/general/battery.png" style="width: 18px; height: 18px; object-fit: contain; vertical-align: middle; margin-right: 8px;" alt="Batteria">Batteria
+          </div>
+        </div>
+        <div class="settings-main" id="settings-content-area"></div>
+      </div>
+    </div>
+
+    <div id="calendar-window" class="window" style="display: none; top: 120px; left: 150px; width: 750px; height: 550px;">
+      <div id="calendar-header" class="window-header">
+        <div class="window-controls">
+          <span class="control close-btn" data-target="calendar-window"></span>
+          <span class="control minimize-btn" data-target="calendar-window"></span>
+          <span class="control maximize-btn" data-target="calendar-window"></span>
+        </div>
+        <div class="window-title" id="calendar-window-title">Calendario</div>
+      </div>
+      <div class="calendar-container" style="position: relative;">
+        <div class="calendar-sidebar">
+          <h4 style="margin-bottom: 15px; font-size: 13px; opacity: 0.6; color: #fff; letter-spacing: 1px;">CALENDARI</h4>
+          <div class="sidebar-item active" id="cal-cat-tutti" onclick="switchCalendarCategory('tutti')">
+            <span style="color: #fff; margin-right: 8px; text-shadow: 0 0 5px rgba(255,255,255,0.5);">●</span> Tutti
+          </div>
+          <div class="sidebar-item" id="cal-cat-personale" onclick="switchCalendarCategory('personale')">
+            <span style="color: #ff3b30; margin-right: 8px; text-shadow: 0 0 5px rgba(255,59,48,0.5);">●</span> Personale
+          </div>
+          <div class="sidebar-item" id="cal-cat-lavoro" onclick="switchCalendarCategory('lavoro')">
+            <span style="color: #007aff; margin-right: 8px; text-shadow: 0 0 5px rgba(0,122,255,0.5);">●</span> Lavoro
+          </div>
+        </div>
+        <div class="calendar-main">
+          <div class="calendar-controls">
+            <h2 id="current-month-year">Mese Anno</h2>
+            <div class="calendar-nav">
+              <button onclick="jumpToToday()" style="font-size: 12px; font-weight: bold; padding: 0 15px; border-radius: 20px; width: auto;">OGGI</button>
+              <button onclick="changeMonth(-1)">‹</button>
+              <button onclick="changeMonth(1)">›</button>
+            </div>
+          </div>
+          <div class="calendar-grid-header">
+            <div>LUN</div><div>MAR</div><div>MER</div><div>GIO</div><div>VEN</div><div>SAB</div><div>DOM</div>
+          </div>
+          <div id="calendar-grid" class="calendar-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window weather-window-glass" id="weather-window" style="display: none; top: 110px; left: 420px; width: 330px; height: 440px;">
+      <div class="window-header" id="weather-header" style="background: transparent; border-bottom: none; z-index: 10;">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="weather-window"></button>
+          <button class="control minimize-btn" data-target="weather-window"></button>
+          <button class="control maximize-btn" data-target="weather-window"></button>
+        </div>
+      </div>
+      <div class="window-content weather-content-glass">
+        <div id="weather-loading" class="weather-loading-vibe">
+          <div class="spinner"></div>
+          <span>Sincronizzazione radar...</span>
+        </div>
+        <div id="weather-app-content" class="weather-main-layout">
+          <img id="weather-hero-img" src="assets/icon/weather/sereno.png" alt="Weather" class="weather-hero-icon">
+          <div class="weather-header-info">
+            <div class="custom-dropdown" id="city-custom-dropdown">
+              <div class="custom-dropdown-selected" onclick="toggleCityDropdown(event)">
+                <span id="custom-dropdown-text">Cupertino</span> <span class="city-select-icon">▼</span>
+              </div>
+              <div class="custom-dropdown-options" id="city-custom-options">
+                <div onclick="selectCustomCity('cupertino', 'Cupertino')">Cupertino</div>
+                <div onclick="selectCustomCity('roma', 'Roma')">Roma</div>
+                <div onclick="selectCustomCity('londra', 'Londra')">Londra</div>
+                <div onclick="selectCustomCity('tokyo', 'Tokyo')">Tokyo</div>
+                <div onclick="selectCustomCity('parigi', 'Parigi')">Parigi</div>
+              </div>
+            </div>
+            <div id="weather-desc">Sincronizzazione...</div>
+          </div>
+          <div id="weather-temp">--°</div>
+          <div class="weather-forecast-panel" id="weather-forecast-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window clock-window-glass" id="clock-window" style="display: none; top: 130px; left: 350px; width: 550px; height: 350px;">
+      <div class="window-header" id="clock-header" style="background: rgba(20, 20, 22, 0.8); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="clock-window"></button>
+          <button class="control minimize-btn" data-target="clock-window"></button>
+          <button class="control maximize-btn" data-target="clock-window"></button>
+        </div>
+        <span class="window-title" style="color: #fff;">Orologio Mondiale</span>
+      </div>
+      <div class="window-content clock-content">
+        <div class="clock-sidebar" id="clock-city-list"></div>
+        <div class="clock-main">
+          <h2 id="clock-active-city">Roma</h2>
+          <div class="analog-clock">
+            <div class="clock-marks" id="clock-marks"></div>
+            <div class="hand hour-hand" id="hour-hand"></div>
+            <div class="hand minute-hand" id="minute-hand"></div>
+            <div class="hand second-hand" id="second-hand"></div>
+            <div class="clock-center"></div>
+          </div>
+          <div class="digital-clock" id="digital-time">00:00:00</div>
+          <div class="clock-date" id="clock-date">Lunedì 1 Gennaio</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window music-window-glass" id="music-window" style="display: none; top: 100px; left: 200px; width: 750px; height: 500px;">
+      <div class="window-header" id="music-header" style="background: rgba(30, 30, 32, 0.7); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="music-window"></button>
+          <button class="control minimize-btn" data-target="music-window"></button>
+          <button class="control maximize-btn" data-target="music-window"></button>
+        </div>
+        <span class="window-title" style="color: #fff; font-weight: 600;">Musica</span>
+      </div>
+      <div class="window-content" style="padding: 0; display: flex; height: calc(100% - 25px); position: relative;">
+        <div class="music-sidebar">
+          <div class="music-nav-title">Libreria</div>
+
+          <div class="music-nav-item active" onclick="setMusicFilter('all')">
+            <img src="assets/icon/music/brani.png" style="width: 16px; height: 16px; margin-right: 10px; object-fit: contain;" alt="Brani"> Brani
+          </div>          
+          <div class="music-nav-item" onclick="setMusicFilter('albums')">
+            <img src="assets/icon/music/album.png" style="width: 16px; height: 16px; margin-right: 10px; object-fit: contain;" alt="Album"> Album
+          </div>
+          <div class="music-nav-item" onclick="setMusicFilter('artists')">
+            <img src="assets/icon/music/singer.png" style="width: 16px; height: 16px; margin-right: 10px; object-fit: contain;" alt="Artisti"> Artisti
+          </div>
+          
+          <div class="music-nav-title" style="margin-top: 25px; display: flex; justify-content: space-between; align-items: center; padding-right: 15px;">
+            <span>PLAYLIST</span>
+            <span onclick="openPlaylistCreator()" style="cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.2s; line-height: 1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'" title="Nuova Playlist">+</span>
+          </div>
+          <div class="music-nav-item" onclick="setMusicFilter('favorites')">
+            <img src="assets/icon/music/favoriteyes.png" style="width: 16px; height: 16px; margin-right: 10px; object-fit: contain;" alt="Preferiti"> Preferiti
+          </div>
+          <div id="custom-playlists-container"></div>
+        </div>
+        <div class="music-main-area" id="music-track-list"></div>
+        
+        <div class="music-player-bar">
+          <div class="music-now-playing">
+            <div class="music-cover-art" id="player-cover"></div>
+            <div class="music-track-info">
+              <div class="music-track-title" id="player-title">Nessun brano in riproduzione</div>
+              <div class="music-track-artist" id="player-artist">--</div>
+            </div>
+          </div>
+          <div class="music-controls-container">
+            <div class="music-controls">
+              <button class="music-btn" onclick="musicPrev()">⏮</button>
+              <button class="music-btn play-btn" id="music-play-btn" onclick="musicTogglePlay()">▶</button>
+              <button class="music-btn" onclick="musicNext()">⏭</button>
+            </div>
+            <div class="music-progress">
+              <span id="music-time-curr" style="width: 30px; text-align: right;">0:00</span>
+              <div class="music-progress-bar-bg" onmousedown="startSeekMusic(event)">            
+                  <div class="music-progress-bar-fill" id="music-progress-fill"></div>
+              </div>
+              <span id="music-time-tot" style="width: 30px;">0:00</span>
+            </div>
+          </div>
+          <div class="music-volume">
+            <span id="volume-icon" onclick="toggleMute()" style="font-size: 16px; opacity: 0.8; cursor: pointer;" title="Muto">🔊</span>
+            <input type="range" min="0" max="100" value="50" class="volume-slider" id="music-volume-slider">
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="window screenshot-app-bar" id="screenshot-window" style="display: none; top: 30px; bottom: auto; left: 50%; transform: translateX(-50%);">
+    
+    <div id="screenshot-header" class="sc-drag-handle" title="Trascina">⋮⋮</div>
+    
+    <div class="sc-tools">
+        <div class="sc-btn active" title="Schermo Intero">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        </div>
+        <div class="sc-btn" title="Finestra (Disabilitato)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg>
+        </div>
+        
+        <div style="width:1px; height:20px; background:rgba(255,255,255,0.2); margin: 0 5px;"></div>
+        
+        <select id="sc-timer-select" class="sc-select" title="Timer Autoscatto">
+            <option value="0">Nessun Timer</option>
+            <option value="3">3 Secondi</option>
+            <option value="5">5 Secondi</option>
+        </select>
+        
+        <button class="sc-capture-btn" onclick="executeScreenshotApp()">Acquisisci</button>
+        <div class="sc-close" onclick="closeWindowAnim(document.getElementById('screenshot-window'), true)">✕</div>
+    </div>
+</div>
+
+    <div class="window reminders-window-glass" id="reminders-window" style="display: none; top: 120px; left: 200px; width: 700px; height: 480px;">
+      <div class="window-header" id="reminders-header" style="background: rgba(20, 20, 22, 0.8); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="reminders-window"></button>
+          <button class="control minimize-btn" data-target="reminders-window"></button>
+          <button class="control maximize-btn" data-target="reminders-window"></button>
+        </div>
+        <span class="window-title" style="color: #fff; font-weight: 600;">Promemoria</span>
+      </div>
+      <div class="window-content" style="padding: 0; display: flex; height: calc(100% - 36px);">
+        <div class="reminders-sidebar">
+          <div class="rem-smart-grid">
+            <div class="rem-smart-card" onclick="setRemindersFilter('oggi')">
+              <div class="rem-card-icon-img-cont"><img src="assets/icon/general/launchpad.png" class="rem-card-icon-img" alt="Oggi"></div>
+              <div class="rem-card-info"><span class="rem-card-title">Oggi</span><span class="rem-card-count" id="rem-count-oggi">0</span></div>
+            </div>
+            <div class="rem-smart-card" onclick="setRemindersFilter('tutti')">
+              <div class="rem-card-icon-img-cont"><img src="assets/icon/folders/S2.png" class="rem-card-icon-img" alt="Tutti" onerror="this.src='assets/icon/general/file.png'"></div>
+              <div class="rem-card-info"><span class="rem-card-title">Tutti</span><span class="rem-card-count" id="rem-count-tutti">0</span></div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px; margin-top: 20px; margin-bottom: 5px;">
+            <h4 class="rem-list-header" style="margin:0;">I MIEI ELENCHI</h4>
+            <span onclick="createNewReminderList()" style="cursor: pointer; color: #fff; opacity: 0.6; font-size: 18px; line-height: 1; font-weight: bold; transition: 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6" title="Nuovo Elenco">+</span>
+          </div>
+          <div id="rem-custom-lists"></div>
+        </div>
+        <div class="reminders-main">
+          <h2 id="rem-current-list-title">Tutti</h2>
+          <div id="rem-tasks-container"></div>
+          <div class="rem-add-task-cont">
+            <div class="rem-add-task-bar">
+              <button class="rem-add-btn-glass" id="rem-add-btn-glass" title="Aggiungi promemoria"></button>
+              <input type="text" id="rem-new-task-input" placeholder="Nuovo promemoria..." autocomplete="off">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="window maps-window-glass" id="maps-window" style="display: none; top: 80px; left: 150px; width: 800px; height: 550px;">
+      <div class="window-header" id="maps-header" style="background: rgba(20, 20, 22, 0.8); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="window-controls">
+          <button class="control close-btn" data-target="maps-window"></button>
+          <button class="control minimize-btn" data-target="maps-window"></button>
+          <button class="control maximize-btn" data-target="maps-window"></button>
+        </div>
+        <span class="window-title" style="color: #fff; font-weight: 600;">Mappe</span>
+      </div>
+      <div class="window-content" style="padding: 0; display: flex; height: calc(100% - 36px); position: relative;">
+        <div class="maps-sidebar">
+          <div class="maps-search-container">
+            <input type="text" id="maps-search-input" placeholder="Cerca città o indirizzo..." autocomplete="off">
+          </div>
+          <h4 class="maps-section-title">CITTA' NEL MONDO</h4>
+          <div class="maps-list">
+            <div class="maps-list-item" onclick="goToMapLocation('Roma, Italia', 12)">
+              <div class="maps-icon-circle" style="background: #007aff;">🇮🇹</div>
+              <div class="maps-item-info">
+                <div class="maps-item-title">Roma</div>
+                <div class="maps-item-sub">Italia</div>
+              </div>
+            </div>
+            <div class="maps-list-item" onclick="goToMapLocation('Londra, UK', 12)">
+              <div class="maps-icon-circle" style="background: #ff9500;">🇬🇧</div>
+              <div class="maps-item-info">
+                <div class="maps-item-title">Londra</div>
+                <div class="maps-item-sub">Regno Unito</div>
+              </div>
+            </div>
+            <div class="maps-list-item" onclick="goToMapLocation('New York, NY', 11)">
+              <div class="maps-icon-circle" style="background: #34c759;">🇺🇸</div>
+              <div class="maps-item-info">
+                <div class="maps-item-title">New York</div>
+                <div class="maps-item-sub">Stati Uniti</div>
+              </div>
+            </div>
+            <div class="maps-list-item" onclick="goToMapLocation('Tokyo, Giappone', 11)">
+              <div class="maps-icon-circle" style="background: #af52de;">🇯🇵</div>
+              <div class="maps-item-info">
+                <div class="maps-item-title">Tokyo</div>
+                <div class="maps-item-sub">Giappone</div>
+              </div>
+            </div>
+            <div class="maps-list-item" onclick="goToMapLocation('Sydney, Australia', 11)">
+              <div class="maps-icon-circle" style="background: #ff2d55;">🇦🇺</div>
+              <div class="maps-item-info">
+                <div class="maps-item-title">Sydney</div>
+                <div class="maps-item-sub">Australia</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="maps-main">
+          <div id="maps-drag-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:5; display:none;"></div>
+          <div id="maps-view" style="width: 100%; height: 100%; z-index: 1;"></div>          
+          <div class="maps-floating-controls">
+              <button class="maps-float-btn" onclick="zoomMap(1)" title="Zoom In">+</button>
+              <button class="maps-float-btn" onclick="zoomMap(-1)" title="Zoom Out">−</button>
+              <div style="height: 1px; background: rgba(255,255,255,0.1); width: 100%; margin: 4px 0;"></div>
+              <button class="maps-float-btn" onclick="goToMapLocation('Roma, Italia', 13)" title="Posizione Corrente">🧭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="context-menu" style="display: none"></div>
+
+    <div id="calendar-popup">
+      <span class="popup-close" onclick="closeCalendarPopup()">✕</span>
+      <h4 id="pop-ev-main-title" style="margin: 0; font-size: 15px; color: #fff; font-weight: 600;">Nuovo Evento</h4>
+      <input type="hidden" id="pop-ev-id">
+      <div class="popup-row">
+        <label>Titolo Evento</label>
+        <input type="text" id="pop-ev-title" placeholder="Es. Riunione Strategica...">
+      </div>
+      <div class="popup-row">
+        <label>Data Inizio</label>
+        <div id="pop-ev-start-display" class="custom-badge">--</div>
+        <input type="hidden" id="pop-ev-start">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <div class="popup-row" style="flex: 1;">
+          <label>Orario</label>
+          <div class="custom-time-picker">
+            <select id="pop-ev-hour"></select>
+            <span style="color: rgba(255,255,255,0.5); font-weight: bold;">:</span>
+            <select id="pop-ev-minute">
+              <option value="00">00</option>
+              <option value="15">15</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+            </select>
+          </div>
+        </div>
+        <div class="popup-row" style="flex: 1;">
+          <label>Durata</label>
+          <select id="pop-ev-duration">
+            <option value="0">Solo Oggi</option>
+            <option value="1">Fino a Domani</option>
+            <option value="2">3 Giorni</option>
+            <option value="3">4 Giorni</option>
+            <option value="6">1 Settimana</option>
+          </select>
+        </div>
+      </div>
+      <div class="popup-row">
+        <label>Ripetizione</label>
+        <select id="pop-ev-repeat">
+          <option value="mai">Mai</option>
+          <option value="giorno">Ogni giorno</option>
+          <option value="settimana">Ogni settimana</option>
+          <option value="mese">Ogni mese</option>
+        </select>
+      </div>
+      <div class="popup-row">
+        <label>Calendario</label>
+        <select id="pop-ev-cat"></select>
+      </div>
+      <div id="pop-footer-buttons" style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="pop-btn-delete" class="delete-btn" onclick="confirmDeleteFromPopup()" style="display: none;">Elimina</button>
+        <button class="save-btn" style="flex: 1;" onclick="saveCalendarPopupEvent()" id="pop-btn-save">Aggiungi Evento</button>
+      </div>
+    </div>
+
+    <div id="mac-dialog-overlay" style="display: none">
+      <div id="mac-dialog">
+        <h3 id="mac-dialog-title">Titolo</h3>
+        <p id="mac-dialog-text" style="display: none"></p>
+        <div class="mac-dialog-row" id="mac-dialog-row-input">
+          <label for="mac-dialog-input">Nome:</label>
+          <input type="text" id="mac-dialog-input" autocomplete="off" />
+        </div>
+        <div class="mac-dialog-row" id="mac-dialog-row-select">
+          <label for="mac-dialog-select">Posizione:</label>
+          <select id="mac-dialog-select"></select>
+        </div>
+        <div class="mac-dialog-buttons">
+          <button id="mac-btn-cancel">Annulla</button>
+          <button id="mac-btn-ok" class="primary">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="folder-customizer-overlay" style="display: none; position: absolute; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.3); z-index: 9999999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s ease-out;">
+      <div id="radial-picker-container" style="position: relative; width: 380px; height: 380px; display: flex; justify-content: center; align-items: center; transform: scale(0.7); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <div id="radial-center-info" style="position: absolute; text-align: center; color: white; display: flex; flex-direction: column; align-items: center; z-index: 50;">
+          <img id="radial-center-icon" src="assets/icon/folders/blue.png" style="width: 55px; height: 55px; margin-bottom: 5px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">
+          <h3 id="folder-customizer-target" style="margin: 0; font-size: 16px; font-weight: 600; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">Nome Cartella</h3>
+          <span style="font-size: 11px; color: #eee; margin-top: 4px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 12px; font-weight: 500;">Doppio click per applicare</span>
+          <button onclick="closeFolderCustomizer()" style="margin-top: 15px; padding: 6px 18px; border-radius: 20px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; cursor: pointer; transition: 0.2s; font-size: 12px; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">Annulla</button>
+        </div>
+        <div id="radial-items-wrapper" style="position: absolute; width: 100%; height: 100%;"></div>
+      </div>
+    </div>
+
+    <div id="playlist-creator-overlay" style="display: none;">
+        <div class="playlist-creator-core">
+            <h3 id="playlist-creator-title">Nuova Playlist</h3>
+            <div id="playlist-circle-container"></div>
+            <button class="liquid-glass-btn" onclick="saveCustomPlaylist()">CREA PLAYLIST</button>
+            <div class="playlist-creator-close" onclick="closePlaylistCreator()">✕</div>
+        </div>
+    </div>
+
+    <div id="mid-music-player">
+      <div id="mid-player-bg"></div>
+      <div id="mid-player-overlay"></div>
+      <div id="mid-close-btn" onclick="toggleMidPlayer()"></div>
+      
+      <div id="mid-player-content">
+          <div id="mid-player-info">
+              <div id="mid-player-title">Nessun Brano</div>
+              <div id="mid-player-artist">-</div>
+          </div>
+          <div id="mid-player-controls">
+              <div class="mid-btn" onclick="musicPrev()">⏮</div>
+              <div class="mid-btn play-btn" id="mid-play-btn" onclick="musicTogglePlay()">▶</div>
+              <div class="mid-btn" onclick="musicNext()">⏭</div>
+          </div>
+          <div id="mid-progress-container">
+              <span id="mid-time-curr">0:00</span>
+              <div id="mid-progress-bg" onmousedown="startSeekMid(event)">
+                  <div id="mid-progress-fill"></div>
+              </div>
+              <span id="mid-time-tot">0:00</span>
+          </div>
+          <div id="mid-player-volume-container">
+              <span id="mid-volume-icon">🔉</span>
+              <input type="range" min="0" max="100" value="50" class="mid-volume-slider" id="mid-volume-slider">
+              <span></span> 
+          </div>
+      </div>
+    </div>
+
+    <div id="rem-inspector-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 9999999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s;">
+      <div id="rem-inspector" style="background: rgba(30,30,32,0.95); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-radius: 12px; width: 340px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.6); color: #fff; transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <h3 style="margin-top:0; margin-bottom: 15px; font-size: 15px; font-weight: 600; text-align: center;">Dettagli Promemoria</h3>
+        <input type="hidden" id="rem-insp-id">
+        
+        <div style="margin-bottom: 12px;">
+            <label style="font-size: 10px; color: #a1a1a6; text-transform: uppercase; font-weight: 600;">Titolo</label>
+            <input type="text" id="rem-insp-title" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 10px; border-radius: 6px; margin-top: 4px; outline: none; font-size: 13px;">
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+            <label style="font-size: 10px; color: #a1a1a6; text-transform: uppercase; font-weight: 600;">Elenco</label>
+            <select id="rem-insp-list" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 10px; border-radius: 6px; margin-top: 4px; outline: none; font-size: 13px; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.6)%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%226 9 12 15 18 9%22%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; cursor: pointer;">
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+            <label style="font-size: 10px; color: #a1a1a6; text-transform: uppercase; font-weight: 600;">Note</label>
+            <textarea id="rem-insp-notes" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 10px; border-radius: 6px; margin-top: 4px; outline: none; height: 60px; resize: none; font-size: 13px; font-family: inherit;"></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <div style="flex: 1;">
+                <label style="font-size: 10px; color: #a1a1a6; text-transform: uppercase; font-weight: 600;">Data</label>
+                <input type="date" id="rem-insp-date" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 10px; border-radius: 6px; margin-top: 4px; outline: none; font-size: 13px; font-family: inherit; color-scheme: dark;">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 10px; color: #a1a1a6; text-transform: uppercase; font-weight: 600;">Luogo</label>
+                <input type="text" id="rem-insp-location" placeholder="Es. Roma..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 10px; border-radius: 6px; margin-top: 4px; outline: none; font-size: 13px;">
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+            <button onclick="deleteReminderFromInspector()" style="background: rgba(255, 59, 48, 0.15); border: 1px solid rgba(255, 59, 48, 0.3); color: #ff453a; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s;" onmouseover="this.style.background='#ff453a'; this.style.color='#fff'" onmouseout="this.style.background='rgba(255, 59, 48, 0.15)'; this.style.color='#ff453a'">Elimina</button>
+            
+            <div style="display: flex; gap: 8px;">
+                <button onclick="closeRemInspector()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px;">Annulla</button>
+                <button onclick="saveRemInspector()" style="background: linear-gradient(180deg, #0a84ff 0%, #007aff 100%); border: 1px solid rgba(0,0,0,0.2); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); color: #fff; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;">Fine</button>
+            </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="dock-container">
+      <div id="dock">
+        <div class="dock-icon" id="notes-icon" data-title="Note">
+          <img src="assets/icon/general/notes.png" alt="Notes">
+        </div>
+        <div class="dock-icon" id="reminders-icon" data-title="Promemoria">
+          <img src="assets/icon/general/reminders.png" alt="Reminders" onerror="this.src='assets/icon/general/file.png'">
+        </div>
+        <div class="dock-icon" id="calc-icon" data-title="Calcolatrice">
+          <img src="assets/icon/general/calculator.png" alt="Calculator">
+        </div>
+        <div class="dock-icon" id="term-icon" data-title="Terminale">
+          <img src="assets/icon/general/terminal.png" alt="Terminal">
+        </div>
+        <div class="dock-icon" id="finder-icon" data-title="Finder">
+          <img src="assets/icon/general/finder.png" alt="Finder">
+        </div>
+        <div class="dock-icon" id="settings-icon" data-title="Impostazioni">
+          <img src="assets/icon/general/settings.png" alt="Settings">
+        </div>
+        <div class="dock-icon" id="screenshot-icon" data-title="Screenshot" data-original-type="shortcut">
+            <img src="assets/icon/general/screenshot.png" onerror="this.src='assets/icon/general/file.png'" alt="Screenshot">
+        </div>
+        <div class="dock-icon" id="calendar-icon" data-title="Calendario">
+          <img src="assets/icon/general/calendar.png" alt="Calendar">
+        </div>
+        <div class="dock-icon" id="weather-icon" data-title="Meteo">
+          <img src="assets/icon/general/weather.png" alt="Weather">
+        </div>
+        <div class="dock-icon" id="clock-icon" data-title="Orologio">
+          <img src="assets/icon/general/clock.png" alt="Clock" onerror="this.src='assets/icon/general/file.png'">
+        </div>
+        <div class="dock-icon" id="music-icon" data-title="Musica">
+          <img src="assets/icon/general/music.png" alt="Music" onerror="this.src='assets/icon/general/file.png'">
+        </div>
+        <div class="dock-icon" id="maps-icon" data-title="Mappe">
+          <img src="assets/icon/general/maps.png" alt="Mappe" onerror="this.src='assets/icon/general/file.png'">
+        </div>
+        <div class="dock-icon" id="trash-icon" data-title="Cestino">
+          <img id="trash-img" src="assets/icon/general/trashempty.png" alt="Trash">
+        </div>
+      </div>
+    </div>
+
+    <div id="control-center" class="control-center">
+    <div class="cc-modules-grid">
+        
+        <div class="cc-module cc-network-module">
+            <div class="cc-toggle-row" onclick="toggleCcFeature(this, 'wifi')">
+                <div class="cc-icon-bg active" id="cc-wifi-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                </div>
+                <div class="cc-text">
+                    <div class="cc-title">Wi-Fi</div>
+                    <div class="cc-subtitle" id="cc-wifi-status">Home</div>
+                </div>
+            </div>
+            
+            <div class="cc-toggle-row" onclick="toggleCcFeature(this, 'bluetooth')">
+                <div class="cc-icon-bg active" id="cc-bt-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"></polyline></svg>
+                </div>
+                <div class="cc-text">
+                    <div class="cc-title">Bluetooth</div>
+                    <div class="cc-subtitle" id="cc-bt-status">Attivo</div>
+                </div>
+            </div>
+            
+            <div class="cc-toggle-row" onclick="toggleCcFeature(this, 'airdrop')">
+                <div class="cc-icon-bg active" id="cc-ad-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
+                </div>
+                <div class="cc-text">
+                    <div class="cc-title">AirDrop</div>
+                    <div class="cc-subtitle" id="cc-ad-status">Solo Contatti</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cc-row-split">
+            <div class="cc-module cc-focus-module" onclick="toggleCcFeature(this, 'focus')">
+                <div class="cc-icon-bg" style="background: rgba(255,255,255,0.15);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </div>
+                <div class="cc-title" style="margin-left: 10px;">Focus</div>
+            </div>
+
+            <div class="cc-module cc-quick-buttons-module">
+                <div class="cc-quick-btn active" title="Luminosità Tastiera">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                </div>
+                <div class="cc-quick-btn" title="Duplica Schermo">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="cc-module cc-slider-module">
+            <div class="cc-slider-header">Display</div>
+            <div class="cc-slider-track">
+                <div class="cc-slider-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </div>
+                <input type="range" id="cc-brightness-slider" min="20" max="100" value="100" class="cc-slider">
+            </div>
+        </div>
+
+        <div class="cc-module cc-slider-module">
+            <div class="cc-slider-header">Sound</div>
+            <div class="cc-slider-track">
+                <div class="cc-slider-icon" id="cc-vol-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                </div>
+                <input type="range" id="cc-volume-slider" min="0" max="100" value="50" class="cc-slider">
+            </div>
+        </div>
+      <div class="cc-bottom-row">
+                <div class="cc-quick-btn" title="Tema Chiaro/Scuro" onclick="toggleTheme()">  
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </div>
+            <div class="cc-quick-btn" title="Apri Calcolatrice" onclick="document.getElementById('calc-icon').click()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14.01"></line><line x1="12" y1="14" x2="12" y2="14.01"></line><line x1="8" y1="14" x2="8" y2="14.01"></line><line x1="16" y1="10" x2="16" y2="10.01"></line><line x1="12" y1="10" x2="12" y2="10.01"></line><line x1="8" y1="10" x2="8" y2="10.01"></line><line x1="16" y1="18" x2="16" y2="18.01"></line><line x1="12" y1="18" x2="12" y2="18.01"></line><line x1="8" y1="18" x2="8" y2="18.01"></line></svg>
+            </div>
+            <div class="cc-quick-btn" title="Apri Orologio" onclick="document.getElementById('clock-icon').click()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="cc-quick-btn" title="Cattura Schermo" onclick="takeScreenshot()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <input type="file" id="profile-upload-input" accept="image/png, image/jpeg, image/jpg" style="display: none;">
+    <input type="file" id="bg-upload-input" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;">
+    
+  </div> <script src="assets/js/script.js"></script>
+</body>
+</html>

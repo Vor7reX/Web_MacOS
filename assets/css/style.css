@@ -1,0 +1,1656 @@
+/* =============================================================================
+   MACOS WEB — MAIN STYLESHEET
+   Architecture: CSS Custom Properties + BEM-like naming + theme overrides
+   Themes: [dark] default | [light] via [data-theme="light"] on <html>
+
+   Sections:
+     1.  Reset & CSS Variables
+     2.  Global Rules & Custom Cursors
+     3.  Desktop, Top Bar & Control Center
+     4.  Dock & Desktop Icons
+     5.  Window Manager
+     6.  Modals, Dialogs & Context Menus
+     7.  App — Screenshot & Thumbnail
+     8.  App — Finder & Calculator
+     9.  App — System Settings
+     10. App — Calendar & Event Popup
+     11. App — Weather & World Clock
+     12. App — Music & Mini Player
+     13. App — Reminders
+     14. App — Maps
+     15. App — Notes & Terminal
+============================================================================= */
+
+
+/* =============================================================================
+   1. RESET & CSS VARIABLES
+   All layout values reset to zero; CSS variables define the full design token
+   system for both dark (default) and light themes.
+============================================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  overflow: hidden;
+  user-select: none;
+  background-color: #000;
+  cursor: url('../cursors/default.svg') 10 7, auto;
+}
+
+/* --- Dark Mode Tokens (default) --- */
+:root {
+
+  --text-main:   #ffffff;
+  --text-muted:  rgba(255, 255, 255, 0.6);
+  --text-subtle: rgba(255, 255, 255, 0.4);
+
+  --bg-window:  rgba(30, 30, 30, 0.85);
+  --bg-sidebar: rgba(10, 10, 12, 0.4);
+  --bg-topbar:  rgba(0, 0, 0, 0.4);
+  --bg-menu:    rgba(30, 30, 30, 0.85);
+
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
+  --hover-bg:     rgba(255, 255, 255, 0.1);
+  --hover-subtle: rgba(255, 255, 255, 0.05);
+
+  --shadow-window: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  --shadow-menu:   0 5px 20px rgba(0, 0, 0, 0.5);
+
+  --accent-color: #0a84ff;
+  --accent-hover: #007aff;
+  --danger-color: #ff5f56;
+  --drag-line:    #0a84ff;
+  --drag-border:  rgba(255, 255, 255, 0.03);
+}
+
+/* --- Light Mode Tokens --- */
+[data-theme="light"] {
+  --text-main:   #000000;
+  --text-muted:  rgba(0, 0, 0, 0.6);
+  --text-subtle: rgba(0, 0, 0, 0.4);
+
+  --bg-window:  rgba(240, 240, 240, 0.85);
+  --bg-sidebar: rgba(220, 220, 225, 0.4);
+  --bg-topbar:  rgba(255, 255, 255, 0.6);
+  --bg-menu:    rgba(245, 245, 245, 0.85);
+
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+
+  --hover-bg:     rgba(0, 0, 0, 0.1);
+  --hover-subtle: rgba(0, 0, 0, 0.05);
+
+  --shadow-window: 0 15px 35px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  --shadow-menu:   0 5px 20px rgba(0, 0, 0, 0.15);
+
+  --accent-color: #007aff;
+  --accent-hover: #0056b3;
+  --danger-color: #ff3b30;
+  --drag-line:    #ff0436;
+  --drag-border:  rgba(0, 0, 0, 0.05);
+}
+
+.window, .control-center, .dropdown, #music-window, .calendar-container {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+
+/* =============================================================================
+   2. GLOBAL RULES & CUSTOM CURSORS
+   Scrollbar styling and pointer overrides for interactive elements.
+   Body state classes (is-dragging-window, is-resizing-*) are toggled by JS.
+============================================================================= */
+
+/* --- Light Mode: window header overrides (applied globally) --- */
+[data-theme="light"] .window-header  { background-color: transparent !important; border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; }
+[data-theme="light"] .window-title   { color: #000 !important; text-shadow: none !important; font-weight: 600 !important; }
+[data-theme="light"] .window-controls { filter: none !important; opacity: 1 !important; }
+
+/* --- Scrollbars --- */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+
+/* --- Custom cursor map --- */
+a, button, .dock-icon, .cc-quick-btn, .cc-toggle-row, .cc-module,
+.menu-item, .window-controls div, .sc-btn, .sc-capture-btn, .sc-close {
+  cursor: url('../cursors/pointer.svg') 9 8, pointer !important;
+}
+.sc-drag-handle, .cc-slider::-webkit-slider-thumb,
+.desktop-item, .fs-item {
+  cursor: url('../cursors/grab.svg') 7 6, grab !important;
+}
+.sc-drag-handle:active, .cc-slider::-webkit-slider-thumb:active,
+.desktop-item:active, body.is-dragging-window, body.is-dragging-window * {
+  cursor: url('../cursors/grabbing.svg') 8 9, grabbing !important;
+}
+.resizer-r, body.is-resizing-r, body.is-resizing-r *     { cursor: url('../cursors/resize-ew.svg')   16 16, ew-resize   !important; }
+.resizer-b, body.is-resizing-b, body.is-resizing-b *     { cursor: url('../cursors/resize-ns.svg')   16 16, ns-resize   !important; }
+.resizer-br, body.is-resizing-br, body.is-resizing-br *  { cursor: url('../cursors/resize-nwse.svg') 16 16, nwse-resize !important; }
+
+/* Disable pointer events on all children during drag/resize to prevent interference */
+body.is-resizing-r *, body.is-resizing-b *,
+body.is-resizing-br *, body.is-dragging-window * {
+  pointer-events: none !important;
+}
+
+/**/
+.no-transitions, .no-transitions *:not(.bg-fade-layer) {
+    transition: none !important;
+}
+
+/* =============================================================================
+   3. DESKTOP, TOP BAR & CONTROL CENTER
+============================================================================= */
+
+/* --- Desktop --- */
+#desktop {
+  width: 100vw;
+  height: 100vh;
+  background-color: #1a1a1a; /* Fallback color while JS loads the wallpaper */
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  padding-top: 28px;
+}
+
+/* --- Top Bar --- */
+#top-bar {
+  width: 100vw;
+  height: 28px;
+  background-color: var(--bg-topbar);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 100000;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.top-bar-left  { display: flex; flex-direction: row; align-items: center; gap: 15px; color: var(--text-main); transition: color 0.3s; }
+.top-bar-right { display: flex; align-items: center; color: var(--text-main); transition: color 0.3s; }
+
+/* --- Menu Bar Items & Dropdowns --- */
+.menu-item {
+  cursor: default;
+  padding: 2px 8px;
+  border-radius: 4px;
+  position: relative;
+  white-space: nowrap;
+}
+.menu-item:hover { background-color: var(--hover-strong); }
+
+.dropdown {
+  display: none;
+  position: absolute;
+  top: 25px;
+  left: 0;
+  background: var(--bg-menu);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 6px;
+  box-shadow: var(--shadow-menu);
+  padding: 5px;
+  min-width: 220px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.dropdown div        { padding: 5px 15px; border-radius: 4px; cursor: default; font-weight: normal; }
+.dropdown div:hover  { background: var(--accent-color); color: white; }
+.dropdown hr         { border: 0; border-top: 1px solid var(--border-subtle); margin: 4px 0; }
+#clock               { font-weight: 500; cursor: default; }
+
+/* --- Control Center panel --- */
+.control-center {
+  position: absolute;
+  top: 40px;
+  right: 15px;
+  width: 320px;
+  background: rgba(30, 30, 32, 0.35);
+  backdrop-filter: blur(50px) saturate(220%);
+  -webkit-backdrop-filter: blur(50px) saturate(220%);
+  border-radius: 34px;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 0.5px rgba(255, 255, 255, 0.15);
+  padding: 16px;
+  z-index: 999999;
+  transform-origin: top right;
+  transform: scale(0.9) translateY(-20px);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 0.5s cubic-bezier(0.250, 1.450, 0.350, 0.950),
+    opacity 0.3s ease,
+    visibility 0.5s;
+}
+.control-center.show { transform: scale(1) translateY(0); opacity: 1; visibility: visible; }
+
+/* --- Control Center: inner modules layout --- */
+.cc-modules-grid   { display: flex; flex-direction: column; gap: 12px; }
+.cc-module         { background: rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 14px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 2px 8px rgba(0,0,0,0.1); }
+.cc-network-module { display: flex; flex-direction: column; gap: 12px; }
+.cc-toggle-row     { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+
+.cc-icon-bg        { width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); display: flex; justify-content: center; align-items: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.cc-icon-bg.active { background: #0a84ff; box-shadow: 0 2px 10px rgba(10, 132, 255, 0.5); }
+
+.cc-text      { display: flex; flex-direction: column; }
+.cc-title     { color: #fff; font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
+.cc-subtitle  { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+
+.cc-row-split { display: flex; gap: 12px; }
+
+/* Focus Mode module */
+.cc-focus-module                    { flex: 1; display: flex; align-items: center; cursor: pointer; padding: 12px; transition: background 0.2s; }
+.cc-focus-module.active             { background: rgba(255,255,255,0.2); }
+.cc-focus-module.active .cc-icon-bg { background: #5856d6 !important; box-shadow: 0 2px 10px rgba(88, 86, 214, 0.5); }
+
+/* Slider modules (brightness / volume) */
+.cc-slider-module  { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.cc-slider-header  { color: #fff; font-size: 13px; font-weight: 600; margin-left: 2px; }
+.cc-slider-track   { display: flex; align-items: center; gap: 12px; position: relative; }
+.cc-slider-icon    { width: 20px; text-align: center; color: #0a84ff; z-index: 2; pointer-events: none; position: absolute; left: 4px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
+
+.cc-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 26px;
+  border-radius: 13px;
+  outline: none;
+  margin: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+.cc-slider::-webkit-slider-runnable-track { width: 100%; height: 26px; border-radius: 13px; background: transparent; }
+.cc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 28px;
+  width: 28px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 -1px 2px rgba(0,0,0,0.1);
+  cursor: grab;
+  transform: translateY(-1px);
+  transition: transform 0.1s ease;
+}
+.cc-slider::-webkit-slider-thumb:active { transform: scale(1.1) translateY(-1px); cursor: grabbing; }
+
+/* Bottom quick-action row */
+.cc-bottom-row           { display: flex; justify-content: space-between; align-items: center; padding: 8px 2px 0 2px; }
+.cc-quick-buttons-module { flex: 1; display: flex; gap: 12px; justify-content: center; align-items: center; padding: 12px; }
+.cc-quick-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 2px 5px rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cc-quick-btn svg        { width: 20px; height: 20px; transition: transform 0.2s; }
+.cc-quick-btn:hover      { background: rgba(255, 255, 255, 0.15); transform: scale(1.05); }
+.cc-quick-btn:active svg { transform: scale(0.9); }
+.cc-quick-btn.active     { background: rgba(255, 255, 255, 0.25); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+
+/* Screen dimmer overlay controlled by brightness slider */
+#screen-dimmer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; opacity: 0; pointer-events: none; z-index: 999900; transition: opacity 0.15s; }
+
+
+/* =============================================================================
+   4. DOCK & DESKTOP ICONS
+============================================================================= */
+
+/* --- Dock container & bar --- */
+#dock-container {
+  position: absolute;
+  bottom: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 9000;
+  pointer-events: none;
+}
+#dock {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 8px 12px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  pointer-events: auto;
+  align-items: flex-end;
+  height: 60px;
+  box-sizing: border-box;
+  transition: padding 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.3s;
+}
+/* State when a window is being dragged over the dock */
+#dock.drag-over-active { padding: 8px 40px; background: rgba(255, 255, 255, 0.25); box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+
+/* --- Dock icon --- */
+.dock-icon {
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  transform-origin: bottom center;
+  transition: width 0.15s ease-out, height 0.15s ease-out;
+  margin: 0 2px;
+}
+.dock-icon img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+
+/* State applied by JS when icon is being dragged out of dock */
+.dock-icon.dragging-out { opacity: 0.4; transform: scale(0.7); filter: grayscale(100%); }
+
+/* Tooltip label (via CSS pseudo-element, no JS required) */
+.dock-icon::before {
+  content: attr(data-title);
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, top 0.2s;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  z-index: 10;
+}
+/* Tooltip arrow */
+.dock-icon::after {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.5) transparent transparent transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, top 0.2s;
+  z-index: 10;
+}
+.dock-icon:hover::before { opacity: 1; top: -55px; }
+.dock-icon:hover::after  { opacity: 1; top: -25px; }
+
+/* Running-app indicator dot */
+.app-indicator {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  background-color: #0a84ff;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 0 6px rgba(10, 132, 255, 0.6);
+  pointer-events: none;
+}
+.dock-icon.app-running .app-indicator { opacity: 1; }
+
+/* --- Desktop icons grid --- */
+#desktop-icons-container {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 28px);
+  z-index: 1;
+}
+.desktop-item {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 75px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+}
+.desktop-item:hover    { background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2); }
+.desktop-item.selected { background-color: rgba(255, 255, 255, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
+.desktop-item .fs-icon { font-size: 45px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); }
+.desktop-item .fs-name { color: white; text-shadow: 0 1px 3px black, 0 1px 3px black; text-align: center; font-size: 12px; margin-top: 5px; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: block; }
+
+/* Rubber-band selection box (toggled by JS) */
+#selection-box { position: absolute; border: 1px solid rgba(10, 132, 255, 0.8); background-color: rgba(10, 132, 255, 0.2); pointer-events: none; z-index: 8999; display: none; border-radius: 2px; }
+
+/* Poof-vanish animation played when an icon is removed from the dock */
+@keyframes poofVanish {
+  0%   { transform: scale(1);   opacity: 1;   filter: blur(0); }
+  40%  { transform: scale(1.5); opacity: 0.8; filter: blur(4px); }
+  100% { transform: scale(2.5); opacity: 0;   filter: blur(15px); }
+}
+.poof-destroyed { animation: poofVanish 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards !important; pointer-events: none; }
+
+
+/* =============================================================================
+   5. WINDOW MANAGER
+   Base window shell, open/close transitions, maximized state,
+   resize sensors and per-app minimum size constraints.
+============================================================================= */
+
+/* --- Base window --- */
+.window {
+  position: absolute;
+  width: 400px;
+  height: 300px;
+  background-color: var(--bg-window);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-radius: 10px;
+  box-shadow: var(--shadow-window);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+  transition:
+    opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.3s,
+    box-shadow 0.3s;
+}
+/* JS adds .show to trigger open animation */
+.window.show { opacity: 1; transform: scale(1); pointer-events: auto; }
+
+/* Full-screen maximized state */
+.window.maximized { top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; border-radius: 0 !important; z-index: 100001 !important; }
+
+/* --- Title bar --- */
+.window-header {
+  height: 36px;
+  flex-shrink: 0;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: grab;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+.window-header:active { cursor: grabbing; }
+.window-title  { width: 100%; text-align: center; font-size: 13px; color: var(--text-main) !important; font-weight: 500; transition: color 0.3s; }
+.window-content { flex-grow: 1; background-color: transparent; display: flex; overflow: hidden; }
+
+/* --- Traffic-light controls --- */
+.window-controls { display: flex; gap: 8px; position: absolute; left: 15px; top: 12px; }
+.control       { width: 12px; height: 12px; border-radius: 50%; border: none; cursor: pointer; padding: 0; }
+.control:focus { outline: none; }
+.close-btn    { background-color: #ff5f56; border: 1px solid #e0443e; }
+.minimize-btn { background-color: #ffbd2e; border: 1px solid #dfa023; }
+.maximize-btn { background-color: #27c93f; border: 1px solid #1aab29; }
+
+/* --- Resize sensors (invisible hit areas on edges/corner) --- */
+.resizer    { position: absolute; z-index: 90; }
+.resizer-r  { top: 0;    right: 0;  width: 6px;  height: 100%; cursor: ew-resize;   }
+.resizer-b  { bottom: 0; left: 0;   width: 100%; height: 6px;  cursor: ns-resize;   }
+.resizer-br { bottom: 0; right: 0;  width: 12px; height: 12px; cursor: nwse-resize; z-index: 91; }
+
+/* --- Per-app minimum size constraints --- */
+.window           { min-width: 320px; min-height: 250px; }
+#music-window     { min-width: 650px; min-height: 450px; }
+#settings-window  { min-width: 550px; min-height: 400px; }
+#calendar-window  { min-width: 600px; min-height: 450px; }
+#finder-window    { min-width: 500px; min-height: 350px; }
+#maps-window      { min-width: 450px; min-height: 400px; }
+#reminders-window { min-width: 500px; min-height: 350px; }
+
+
+/* =============================================================================
+   6. MODALS, DIALOGS & CONTEXT MENUS
+============================================================================= */
+
+/* --- System dialog (alert / prompt replacement) --- */
+#mac-dialog-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.4); z-index: 9999999; display: flex; justify-content: center; align-items: flex-start; padding-top: 15vh; }
+#mac-dialog {
+  background: rgba(40, 40, 40, 0.95);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  width: 350px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+#mac-dialog-title     { font-size: 15px; text-align: center; margin-bottom: 5px; }
+#mac-dialog-text      { font-size: 13px; text-align: center; color: #ccc; }
+.mac-dialog-row       { display: flex; align-items: center; gap: 10px; }
+.mac-dialog-row label { width: 70px; font-size: 12px; text-align: right; color: #aaa; font-weight: 600; }
+
+#mac-dialog-input,
+#mac-dialog-select {
+  flex-grow: 1;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+#mac-dialog-input:focus,
+#mac-dialog-select:focus    { border-color: #0a84ff; box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3); }
+
+.mac-dialog-buttons         { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+.mac-dialog-buttons button  { padding: 6px 15px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); cursor: pointer; font-size: 13px; color: #fff; }
+.mac-dialog-buttons button:hover   { background: rgba(255, 255, 255, 0.1); }
+.mac-dialog-buttons button.primary { background: #0a84ff; border-color: #007aff; }
+
+/* --- Right-click context menu --- */
+#context-menu {
+  position: absolute;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 5px;
+  min-width: 200px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  font-size: 13px;
+}
+.context-item         { padding: 5px 10px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; }
+.context-item:hover   { background-color: #0a84ff; color: white; }
+.context-divider      { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 4px 0; }
+
+/* --- Radial wallpaper picker --- */
+.radial-color-option {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  margin-top: -26px;
+  margin-left: -26px;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background 0.2s;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid transparent;
+}
+.radial-color-option img              { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); pointer-events: none; }
+.radial-color-option:hover            { background: rgba(255,255,255,0.15); box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 100; }
+.radial-color-option.selected         { border-color: #0a84ff; background: rgba(10, 132, 255, 0.2); box-shadow: 0 0 20px rgba(10, 132, 255, 0.5); }
+
+/* --- Utility animations --- */
+.fade-in    { animation: fadeIn 0.3s ease-out forwards; }
+.fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp  { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- Light Mode: modals & context menus --- */
+[data-theme="light"] #mac-dialog-overlay      { background-color: rgba(0, 0, 0, 0.15) !important; }
+[data-theme="light"] #mac-dialog              { background: rgba(255, 255, 255, 0.95) !important; border-color: rgba(0, 0, 0, 0.15) !important; color: #000 !important; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] #mac-dialog-text         { color: rgba(0, 0, 0, 0.6) !important; }
+[data-theme="light"] .mac-dialog-row label    { color: rgba(0, 0, 0, 0.5) !important; }
+[data-theme="light"] #mac-dialog-input,
+[data-theme="light"] #mac-dialog-select                  { background: #ffffff !important; border-color: rgba(0, 0, 0, 0.1) !important; color: #000 !important; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03) !important; }
+[data-theme="light"] .mac-dialog-buttons button          { background: rgba(0, 0, 0, 0.05) !important; border-color: rgba(0, 0, 0, 0.1) !important; color: #000 !important; }
+[data-theme="light"] .mac-dialog-buttons button:hover    { background: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .mac-dialog-buttons button.primary  { background: #0a84ff !important; color: #fff !important; border-color: #007aff !important; }
+[data-theme="light"] #context-menu        { background: rgba(240, 240, 245, 0.9) !important; border-color: rgba(0, 0, 0, 0.15) !important; color: #000 !important; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15) !important; }
+[data-theme="light"] .context-divider     { border-top-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .context-item        { color: #000 !important; }
+[data-theme="light"] .context-item:hover  { color: #fff !important; }
+[data-theme="light"] .radial-color-option          { background: rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .radial-color-option:hover    { background: rgba(0, 0, 0, 0.1) !important; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important; }
+[data-theme="light"] .radial-color-option.selected { background: rgba(10, 132, 255, 0.1) !important; }
+
+
+/* =============================================================================
+   7. APP — SCREENSHOT & THUMBNAIL
+============================================================================= */
+
+/* Floating tool bar (no standard window chrome) */
+.screenshot-app-bar {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  background: rgba(30, 30, 32, 0.7);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  resize: none !important;
+}
+/* Hide standard traffic lights — this bar uses its own close button */
+.screenshot-app-bar .window-controls { display: none !important; }
+
+.sc-drag-handle        { cursor: grab; color: rgba(255,255,255,0.3); margin-right: 12px; font-weight: bold; letter-spacing: -2px; font-size: 16px; padding: 5px; }
+.sc-drag-handle:active { cursor: grabbing; }
+.sc-tools              { display: flex; align-items: center; gap: 8px; }
+.sc-btn                { padding: 6px; border-radius: 8px; background: rgba(255,255,255,0.05); color: white; display: flex; cursor: pointer; transition: .2s; }
+.sc-btn:hover          { background: rgba(255,255,255,0.15); }
+.sc-btn.active         { background: #0a84ff; box-shadow: 0 2px 8px rgba(10, 132, 255, 0.4); color: white; }
+.sc-select             { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; padding: 6px 10px; outline: none; font-size: 12px; cursor: pointer; }
+.sc-select option      { background: #222; }
+.sc-capture-btn        { background: #fff; color: #000; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; transition: .2s; }
+.sc-capture-btn:hover  { transform: scale(1.05); }
+.sc-capture-btn:active { transform: scale(0.95); }
+.sc-close              { color: rgba(255,255,255,0.5); cursor: pointer; font-size: 16px; margin-left: 5px; padding: 4px 8px; border-radius: 50%; transition: .2s; }
+.sc-close:hover        { background: rgba(255,255,255,0.1); color: white; }
+
+/* Thumbnail preview that slides in after capture */
+.screenshot-thumb {
+  position: fixed;
+  bottom: 20px;
+  right: -250px; /* off-screen initial state; JS adds .show */
+  width: 180px;
+  height: 110px;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.1);
+  z-index: 9999999;
+  cursor: pointer;
+  transition: right 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.5s;
+}
+.screenshot-thumb.show  { right: 20px; }
+.screenshot-thumb:hover { transform: scale(1.02); }
+
+/* --- Light Mode: screenshot bar --- */
+[data-theme="light"] .screenshot-app-bar   { background: rgba(240, 240, 245, 0.85) !important; border-color: rgba(0, 0, 0, 0.15) !important; box-shadow: 0 15px 40px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.8) !important; }
+[data-theme="light"] .sc-drag-handle       { color: rgba(0, 0, 0, 0.3) !important; }
+[data-theme="light"] .sc-btn               { background: rgba(0, 0, 0, 0.05) !important; color: #000 !important; }
+[data-theme="light"] .sc-btn:hover         { background: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .sc-btn.active        { background: #0a84ff !important; color: #fff !important; box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3) !important; }
+[data-theme="light"] .sc-select            { background: rgba(0, 0, 0, 0.05) !important; border-color: rgba(0, 0, 0, 0.1) !important; color: #000 !important; }
+[data-theme="light"] .sc-select option     { background: #fff !important; color: #000 !important; }
+[data-theme="light"] .sc-capture-btn       { background: #000 !important; color: #fff !important; }
+[data-theme="light"] .sc-capture-btn:hover { background: #ff0436 !important; }
+[data-theme="light"] .sc-close             { color: rgba(0, 0, 0, 0.4) !important; }
+[data-theme="light"] .sc-close:hover       { background: rgba(0, 0, 0, 0.08) !important; color: #000 !important; }
+
+
+/* =============================================================================
+   8. APP — FINDER & CALCULATOR
+============================================================================= */
+
+/* --- Finder --- */
+.finder-bg      { background-color: transparent; }
+.finder-sidebar {
+  width: 150px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+.sidebar-item        { padding: 5px 15px; font-size: 13px; color: var(--text-main); cursor: pointer; margin: 0 10px; border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; transition: color 0.3s, background-color 0.3s; }
+.sidebar-item:hover  { background-color: var(--hover-subtle); color: var(--text-main); }
+.sidebar-item.active { background-color: var(--accent-color); color: white; }
+
+.finder-main           { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--hover-subtle); transition: background-color 0.3s; }
+.finder-toolbar        { height: 40px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; padding: 0 15px; gap: 10px; background-color: var(--hover-subtle); transition: background-color 0.3s, border-color 0.3s; }
+.finder-toolbar button { background: var(--hover-bg); border: 1px solid var(--border-subtle); padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; color: var(--text-main); transition: background 0.3s, border-color 0.3s, color 0.3s; }
+#finder-path-display   { font-size: 12px; color: var(--text-muted); transition: color 0.3s; }
+
+.finder-grid      { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 15px; overflow-y: auto; flex-grow: 1; align-content: start; }
+.fs-item          { display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 5px; border-radius: 5px; transition: background-color 0.2s; }
+.fs-item:hover    { background-color: var(--hover-bg); }
+.fs-icon          { font-size: 36px; margin-bottom: 5px; pointer-events: none; }
+.fs-name          { font-size: 12px; text-align: center; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: block; pointer-events: none; transition: color 0.3s; }
+.fs-item.selected { background-color: rgba(0, 122, 255, 0.3); border-radius: 6px; box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.5); }
+
+/* --- Calculator --- */
+.calc-bg         { background-color: rgba(40, 40, 40, 0.9); flex-direction: column; }
+#calc-display    { width: 100%; height: 70px; background: transparent; border: none; color: white; font-size: 45px; font-weight: 200; text-align: right; padding: 0 20px; outline: none; }
+.calc-grid       { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; flex-grow: 1; background-color: #222; }
+.calc-btn        { background-color: #555; color: white; font-size: 20px; border: none; cursor: pointer; }
+.calc-btn:active { background-color: #777; }
+.gray-btn        { background-color: #3b3b3b; }
+.gray-btn:active { background-color: #555; }
+.op-btn          { background-color: #ff9f0a; color: white; font-size: 26px; }
+.op-btn:active   { background-color: #cc7f08; }
+.zero-btn        { grid-column: span 2; text-align: left; padding-left: 25px; }
+
+
+/* =============================================================================
+   9. APP — SYSTEM SETTINGS
+============================================================================= */
+
+.settings-sidebar         { width: 180px; background: rgba(0, 0, 0, 0.2); border-right: 1px solid rgba(255, 255, 255, 0.05); padding: 15px 10px; display: flex; flex-direction: column; gap: 5px; -ms-overflow-style: none; scrollbar-width: none; }
+.settings-nav-item        { padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: #ddd; transition: background 0.1s, color 0.1s; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; box-sizing: border-box; }
+.settings-nav-item img    { vertical-align: middle; flex-shrink: 0; }
+.settings-nav-item:hover  { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.settings-nav-item.active { background: #0a84ff; color: white; }
+
+.settings-main           { flex-grow: 1; padding: 25px 35px; overflow-y: auto; color: #fff; -ms-overflow-style: none; scrollbar-width: none; }
+.settings-card           { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 5px 20px; margin-bottom: 20px; }
+.settings-row            { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 13px; }
+.settings-row:last-child { border-bottom: none; }
+.settings-label          { color: #bbb; font-weight: 500; }
+.settings-value          { color: #fff; font-weight: 600; text-align: right; }
+.settings-title          { margin: 0; font-size: 24px; font-weight: 600; color: #fff; }
+.settings-subtitle       { margin: 2px 0 0 0; color: #aaa; font-size: 13px; }
+.settings-section-title  { font-size: 11px; color: #888; margin-bottom: 8px; margin-top: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* --- Light Mode: settings --- */
+[data-theme="light"] .settings-sidebar            { background: rgba(255, 255, 255, 0.5); border-right-color: rgba(0, 0, 0, 0.1); }
+[data-theme="light"] .settings-nav-item           { color: rgba(0, 0, 0, 0.7); }
+[data-theme="light"] .settings-nav-item:hover     { background: rgba(0, 0, 0, 0.05); color: #000; }
+[data-theme="light"] .settings-nav-item.active    { background: #0a84ff; color: #fff; }
+[data-theme="light"] .settings-main               { color: #000; }
+[data-theme="light"] .settings-title              { color: #000; }
+[data-theme="light"] .settings-subtitle           { color: rgba(0, 0, 0, 0.5); }
+[data-theme="light"] .settings-section-title      { color: rgba(0, 0, 0, 0.4); }
+[data-theme="light"] .settings-card               { background: #ffffff; border-color: rgba(0, 0, 0, 0.08); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03); }
+[data-theme="light"] .settings-row                { border-bottom-color: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .settings-label              { color: rgba(0, 0, 0, 0.6); }
+[data-theme="light"] .settings-value              { color: #000; }
+[data-theme="light"] #settings-content-area h3    { color: #000 !important; }
+[data-theme="light"] #settings-content-area button       { background: rgba(0, 0, 0, 0.05) !important; border-color: rgba(0, 0, 0, 0.15) !important; color: #000 !important; }
+[data-theme="light"] #settings-content-area button:hover { background: rgba(0, 0, 0, 0.1) !important; }
+
+/* Fake monitor preview in the wallpaper panel */
+[data-theme="light"] div:has(> div > #settings-bg-preview)                  { background: #e5e5ea !important; box-shadow: 0 15px 35px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.9) !important; }
+[data-theme="light"] div:has(> #settings-bg-preview)                        { box-shadow: inset 0 0 8px rgba(0,0,0,0.15) !important; }
+[data-theme="light"] div:has(> div > #settings-bg-preview) > div:last-child { background: rgba(0, 0, 0, 0.2) !important; }
+
+
+/* =============================================================================
+   10. APP — CALENDAR & EVENT POPUP
+============================================================================= */
+
+/* --- Calendar shell & header --- */
+#calendar-header { background: rgba(20, 20, 22, 0.8) !important; color: white !important; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.calendar-container {
+  display: flex;
+  flex: 1;
+  height: calc(100% - 30px);
+  background: rgba(30, 30, 32, 0.7);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  color: #f5f5f7;
+}
+.calendar-sidebar { width: 190px; padding: 20px; border-right: 1px solid rgba(255,255,255,0.05); background: rgba(10, 10, 12, 0.4); }
+.calendar-sidebar .sidebar-item        { padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: .2s; color: #a1a1a6; }
+.calendar-sidebar .sidebar-item:hover  { background: rgba(255,255,255,0.05); color: #fff; }
+.calendar-sidebar .sidebar-item.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+
+/* --- Month grid controls --- */
+.calendar-main        { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+.calendar-controls    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.calendar-controls h2 { font-size: 22px; font-weight: 600; color: #fff; letter-spacing: 0.5px; }
+.calendar-nav         { display: flex; gap: 10px; }
+.calendar-nav button  { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.calendar-nav button:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+
+/* --- Day grid --- */
+.calendar-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; font-weight: 700; color: #86868b; margin-bottom: 10px; letter-spacing: 1px; }
+.calendar-grid        { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(6, 1fr); flex: 1; border-top: 1px solid rgba(255,255,255,0.05); border-left: 1px solid rgba(255,255,255,0.05); }
+.calendar-day         { border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 5px; position: relative; cursor: pointer; transition: background 0.2s; min-height: 60px; }
+.calendar-day:hover   { background: rgba(255, 255, 255, 0.05); }
+.calendar-day.today   { background: rgba(255, 255, 255, 0.03); }
+.calendar-day.today .day-number { background: linear-gradient(135deg, #ff3b30, #ff453a); color: white; border-radius: 50%; font-weight: bold; box-shadow: 0 2px 8px rgba(255, 59, 48, 0.5); }
+.day-number  { font-size: 13px; font-weight: 500; margin-bottom: 5px; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: #f5f5f7; transition: .2s; }
+.day-events  { font-size: 10px; display: flex; flex-direction: column; gap: 4px; }
+.other-month { opacity: 0.15; pointer-events: none; }
+
+/* --- Event tags (single-day and multi-day spanning) --- */
+.event-tag       { padding: 3px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.5); letter-spacing: 0.2px; }
+.event-personale { background: linear-gradient(135deg, #ff3b30, #ff453a); color: white; box-shadow: 0 2px 6px rgba(255, 59, 48, 0.4); border: 1px solid rgba(255,255,255,0.2); }
+.event-lavoro    { background: linear-gradient(135deg, #0a84ff, #007aff); color: white; box-shadow: 0 2px 6px rgba(0, 122, 255, 0.4); border: 1px solid rgba(255,255,255,0.2); }
+.event-single    { border-radius: 4px; margin: 0; }
+.event-start     { border-radius: 4px 0 0 4px; margin-right: -6px; border-right: none; position: relative; z-index: 2; }
+.event-middle    { border-radius: 0; margin-left: -5px; margin-right: -6px; border-left: none; border-right: none; position: relative; z-index: 2; color: transparent; }
+.event-end       { border-radius: 0 4px 4px 0; margin-left: -5px; border-left: none; position: relative; z-index: 2; color: transparent; }
+
+/* --- New event popup --- */
+#calendar-popup {
+  position: absolute;
+  z-index: 100;
+  background: rgba(20, 20, 22, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 16px;
+  width: 260px;
+  color: #fff;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  transition: opacity 0.2s;
+}
+#calendar-popup input,
+#calendar-popup select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+#calendar-popup input:hover,
+#calendar-popup select:hover { background-color: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.3); }
+#calendar-popup input:focus,
+#calendar-popup select:focus { border-color: #0a84ff; background-color: rgba(255, 255, 255, 0.15); box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.3), inset 0 2px 4px rgba(0,0,0,0.2); }
+
+/* Custom chevron arrow for the select */
+#calendar-popup select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 36px;
+  cursor: pointer;
+}
+#calendar-popup select option { background-color: #1e1e1e; color: #fff; }
+
+/* Native date/time picker icon — inverted for dark background */
+#calendar-popup input[type="date"]::-webkit-calendar-picker-indicator,
+#calendar-popup input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.5); cursor: pointer; transition: .2s; }
+#calendar-popup input[type="date"]::-webkit-calendar-picker-indicator:hover,
+#calendar-popup input[type="time"]::-webkit-calendar-picker-indicator:hover { filter: invert(1) opacity(1); }
+
+.popup-row         { display: flex; flex-direction: column; gap: 4px; }
+.popup-row label   { font-size: 10px; color: #a1a1a6; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.popup-close       { position: absolute; top: 12px; right: 15px; cursor: pointer; font-size: 16px; color: #a1a1a6; transition: .2s; }
+.popup-close:hover { color: #ff3b30; }
+.custom-badge      { background: rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #0a84ff; border: 1px solid rgba(255,255,255,0.15); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); letter-spacing: 0.5px; }
+
+/* Custom two-part (HH:MM) time picker — avoids native input[type=time] quirks */
+.custom-time-picker { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.08); padding: 0 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s ease; }
+.custom-time-picker:focus-within { border-color: #0a84ff; box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.3), inset 0 2px 4px rgba(0,0,0,0.2); background-color: rgba(255, 255, 255, 0.15); }
+.custom-time-picker select { background: transparent !important; border: none !important; box-shadow: none !important; padding: 10px 5px !important; text-align: center; font-size: 14px; width: 45%; outline: none; background-image: none !important; }
+
+#calendar-popup button.save-btn {
+  background: linear-gradient(180deg, #0a84ff 0%, #007aff 100%);
+  color: #fff;
+  border: 1px solid rgba(0,0,0,0.2);
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  text-shadow: 0 -1px 0 rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+#calendar-popup button.save-btn:hover   { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+#calendar-popup button.save-btn:active  { transform: translateY(0); filter: brightness(0.9); }
+#calendar-popup button.delete-btn       { background: rgba(255, 59, 48, 0.15); color: #ff453a; border: 1px solid rgba(255, 59, 48, 0.3); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: .2s; }
+#calendar-popup button.delete-btn:hover { background: #ff453a; color: #fff; }
+
+/* --- Light Mode: calendar --- */
+[data-theme="light"] #calendar-header                      { background: rgba(240, 240, 245, 0.85) !important; color: #000 !important; border-bottom-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .calendar-container                   { background: rgba(240, 240, 245, 0.85) !important; color: #000 !important; }
+[data-theme="light"] .calendar-sidebar                     { background: rgba(255, 255, 255, 0.5) !important; border-right-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .calendar-sidebar .sidebar-item       { color: rgba(0, 0, 0, 0.6) !important; }
+[data-theme="light"] .calendar-sidebar .sidebar-item:hover { background: rgba(0, 0, 0, 0.05) !important; color: #000 !important; }
+[data-theme="light"] .calendar-sidebar .sidebar-item.active{ background: rgba(10, 132, 255, 0.1) !important; color: #0a84ff !important; font-weight: 600 !important; box-shadow: inset 0 0 0 1px rgba(10, 132, 255, 0.2) !important; }
+[data-theme="light"] .calendar-controls h2                 { color: #000 !important; }
+[data-theme="light"] .calendar-nav button                  { background: rgba(0, 0, 0, 0.05) !important; border-color: rgba(0, 0, 0, 0.1) !important; color: #000 !important; box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important; }
+[data-theme="light"] .calendar-nav button:hover            { background: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .calendar-grid-header                 { color: rgba(0, 0, 0, 0.5) !important; }
+[data-theme="light"] .calendar-grid                        { border-top-color: rgba(0, 0, 0, 0.1) !important; border-left-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .calendar-day                         { border-right-color: rgba(0, 0, 0, 0.1) !important; border-bottom-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .calendar-day:hover                   { background: rgba(0, 0, 0, 0.03) !important; }
+[data-theme="light"] .calendar-day.today                   { background: rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .day-number                           { color: #000 !important; }
+[data-theme="light"] .calendar-sidebar h4,
+[data-theme="light"] .calendar-sidebar span[title="Nuovo Calendario"] {  color: rgba(0, 0, 0, 0.5) !important;}
+
+[data-theme="light"] #cal-cat-tutti span { color: rgba(0, 0, 0, 0.6) !important; text-shadow: none !important; }
+
+/* --- Light Mode: event popup --- */
+[data-theme="light"] #calendar-popup                 { background: rgba(255, 255, 255, 0.95) !important; border-color: rgba(0, 0, 0, 0.15) !important; color: #000 !important; box-shadow: 0 15px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05) !important; }
+[data-theme="light"] .popup-row label                { color: rgba(0, 0, 0, 0.5) !important; }
+[data-theme="light"] .popup-close                    { color: rgba(0, 0, 0, 0.4) !important; }
+[data-theme="light"] .popup-close:hover              { color: #ff3b30 !important; }
+[data-theme="light"] #calendar-popup input,
+[data-theme="light"] #calendar-popup select          { background-color: #ffffff !important; border-color: rgba(0, 0, 0, 0.1) !important; color: #000 !important; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03) !important; }
+[data-theme="light"] #calendar-popup input:hover,
+[data-theme="light"] #calendar-popup select:hover    { background-color: #fafafa !important; border-color: rgba(0, 0, 0, 0.2) !important; }
+[data-theme="light"] #calendar-popup select option   { background-color: #fff !important; color: #000 !important; }
+/* Black chevron arrow for light mode */
+[data-theme="light"] #calendar-popup select          { background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important; }
+/* Native picker icon — keep dark (don't invert) */
+[data-theme="light"] #calendar-popup input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] #calendar-popup input[type="time"]::-webkit-calendar-picker-indicator       { filter: invert(0) opacity(0.5) !important; }
+[data-theme="light"] #calendar-popup input[type="date"]::-webkit-calendar-picker-indicator:hover,
+[data-theme="light"] #calendar-popup input[type="time"]::-webkit-calendar-picker-indicator:hover { filter: invert(0) opacity(1) !important; }
+[data-theme="light"] .custom-time-picker             { background: #ffffff !important; border-color: rgba(0, 0, 0, 0.1) !important; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .custom-badge                   { background: rgba(10, 132, 255, 0.1) !important; border-color: rgba(10, 132, 255, 0.2) !important; }
+/* Remove stray native arrow from time selects inside the custom picker */
+[data-theme="light"] #calendar-popup .custom-time-picker select { color: #000 !important; background: transparent !important; background-image: none !important; -webkit-appearance: none !important; appearance: none !important; font-weight: 600 !important; padding-right: 5px !important; }
+[data-theme="light"] #calendar-popup .custom-time-picker span   { color: #000 !important; }
+[data-theme="light"] #pop-ev-main-title                         { color: #000 !important; }
+[data-theme="light"] #calendar-popup input[type="time"] { color: #000 !important; background-color: #ffffff !important; }
+[data-theme="light"] #calendar-popup input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0) !important; opacity: 0.6; }
+
+
+/* =============================================================================
+   11. APP — WEATHER & WORLD CLOCK
+============================================================================= */
+
+/* --- Weather: glassmorphism shell --- */
+.weather-window-glass {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
+  overflow: hidden;
+}
+.weather-content-glass { position: relative !important; flex-grow: 1; background: transparent !important; padding: 0 !important; display: flex; flex-direction: column; color: #fff; }
+.weather-main-layout   { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 10px; width: 100%; height: 100%; padding: 10px 20px 25px 20px; box-sizing: border-box; }
+.weather-hero-icon     { width: auto; height: 75px; max-width: 100px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); margin-top: 5px; }
+.weather-header-info   { text-align: center; }
+#weather-desc { font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.8); margin-top: 1px; }
+#weather-temp { font-size: 64px; font-weight: 200; margin: -5px 0 10px 0; line-height: 1; text-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+/* City dropdown (custom — avoids native select styling) */
+.custom-dropdown          { position: relative; display: inline-block; text-align: center; margin-bottom: 2px; }
+.custom-dropdown-selected { font-size: 26px; font-weight: 700; cursor: pointer; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.3); display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
+.custom-dropdown-selected:hover { opacity: 0.9; }
+.custom-dropdown-options  { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: rgba(8, 8, 8, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 6px; min-width: 160px; z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+.custom-dropdown-options.show { display: block; animation: fadeInDrop 0.2s ease-out; }
+.custom-dropdown-options div       { padding: 10px 15px; color: #fff; font-size: 16px; font-weight: 500; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+.custom-dropdown-options div:hover { background: rgba(255, 255, 255, 0.15); }
+
+@keyframes fadeInDrop { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* Horizontal scrollable 7-day forecast strip */
+.weather-forecast-panel {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border-radius: 16px;
+  padding: 12px 15px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 5px 15px rgba(0,0,0,0.2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.weather-forecast-panel::-webkit-scrollbar { display: none; }
+
+.weather-day-vibe        { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 22px; border: 1px solid transparent; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); flex-shrink: 0; min-width: 75px; }
+.weather-day-vibe:hover  { background: rgba(255, 255, 255, 0.03); }
+.weather-day-vibe.active { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.25); transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 15px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.2); }
+.weather-day-name        { font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.8px; }
+.weather-icon-small      { width: 32px; height: 32px; object-fit: contain; margin: 2px 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.weather-temp-range      { display: flex; gap: 6px; font-size: 14px; }
+.weather-temp-range span.max-t { font-weight: 600; color: #fff; }
+.weather-temp-range span.min-t { font-weight: 500; color: rgba(255, 255, 255, 0.5); }
+
+/* Loading spinner shown while fetching weather data */
+.weather-loading-vibe { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; color: rgba(255, 255, 255, 0.5); font-size: 13px; font-weight: 500; z-index: 5; }
+.spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.1); border-top-color: rgba(255,255,255,0.6); border-radius: 50%; animation: spinWeather 1s linear infinite; }
+@keyframes spinWeather { to { transform: rotate(360deg); } }
+
+/* --- Light Mode: weather --- */
+[data-theme="light"] .weather-content-glass                { color: #000; }
+[data-theme="light"] #weather-desc                         { color: rgba(0, 0, 0, 0.6); }
+[data-theme="light"] #weather-temp                         { text-shadow: none; }
+[data-theme="light"] .custom-dropdown-selected             { color: #000; text-shadow: none; }
+[data-theme="light"] .custom-dropdown-options              { background: rgba(255, 255, 255, 0.85); border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+[data-theme="light"] .custom-dropdown-options div          { color: #000; }
+[data-theme="light"] .custom-dropdown-options div:hover    { background: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .weather-forecast-panel               { background: rgba(255, 255, 255, 0.5); border-color: rgba(0, 0, 0, 0.05); box-shadow: inset 0 1px 1px rgba(255,255,255,0.4), 0 5px 15px rgba(0,0,0,0.05); }
+[data-theme="light"] .weather-day-vibe:hover               { background: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .weather-day-vibe.active              { background: rgba(255, 255, 255, 0.8); border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+[data-theme="light"] .weather-day-name                     { color: rgba(0, 0, 0, 0.5); }
+[data-theme="light"] .weather-temp-range span.max-t        { color: #000; }
+[data-theme="light"] .weather-temp-range span.min-t        { color: rgba(0, 0, 0, 0.5); }
+
+/* --- World Clock --- */
+.clock-window-glass        { background: rgba(30, 30, 32, 0.85) !important; backdrop-filter: blur(30px) saturate(180%) !important; -webkit-backdrop-filter: blur(30px) saturate(180%) !important; }
+.clock-content             { display: flex; flex-direction: row !important; padding: 0 !important; color: #fff; background: transparent !important; }
+.clock-sidebar             { width: 180px; background: rgba(10, 10, 12, 0.4); border-right: 1px solid rgba(255,255,255,0.05); padding: 15px 10px; display: flex; flex-direction: column; gap: 5px; }
+.clock-sidebar-item        { padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #a1a1a6; transition: all 0.2s; display: flex; justify-content: space-between; }
+.clock-sidebar-item:hover  { background: rgba(255,255,255,0.05); color: #fff; }
+.clock-sidebar-item.active { background: #0a84ff; color: white; box-shadow: 0 2px 10px rgba(0, 122, 255, 0.4); }
+.clock-main                { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+#clock-active-city         { font-size: 24px; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.5px; }
+
+/* Analog clock face */
+.analog-clock  { width: 160px; height: 160px; border-radius: 50%; background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2)); border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.05); position: relative; margin-bottom: 20px; }
+.clock-center  { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background: #fff; border-radius: 50%; z-index: 10; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+.hand          { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 4px; z-index: 5; }
+.hour-hand     { width: 4px;   height: 45px; background: #fff;     margin-left: -2px; }
+.minute-hand   { width: 3px;   height: 65px; background: #a1a1a6;  margin-left: -1.5px; }
+.second-hand   { width: 1.5px; height: 75px; background: #ff3b30;  margin-left: -0.75px; z-index: 6; }
+/* Counter-weight tail for the second hand */
+.second-hand::after { content: ''; position: absolute; top: 100%; left: 0; width: 100%; height: 15px; background: #ff3b30; border-radius: 2px; }
+.digital-clock { font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 300; letter-spacing: 1px; }
+.clock-date    { font-size: 13px; color: #a1a1a6; margin-top: 5px; font-weight: 500; }
+
+/* --- Light Mode: world clock --- */
+[data-theme="light"] .clock-window-glass          { background: rgba(240, 240, 245, 0.85) !important; }
+[data-theme="light"] .clock-content               { color: #000 !important; }
+[data-theme="light"] .clock-sidebar               { background: rgba(255, 255, 255, 0.5); border-right-color: rgba(0, 0, 0, 0.1); }
+[data-theme="light"] .clock-sidebar-item          { color: rgba(0, 0, 0, 0.6); }
+[data-theme="light"] .clock-sidebar-item:hover    { background: rgba(0, 0, 0, 0.05); color: #000; }
+[data-theme="light"] .clock-sidebar-item.active   { background: #0a84ff; color: #fff; }
+[data-theme="light"] .analog-clock                { background: linear-gradient(145deg, #ffffff, rgba(240,240,245,0.8)); border-color: rgba(0, 0, 0, 0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.08), inset 0 2px 10px rgba(0,0,0,0.02); }
+[data-theme="light"] .clock-center                { background: #000; }
+[data-theme="light"] .hour-hand                   { background: #000; }
+[data-theme="light"] .minute-hand                 { background: rgba(0,0,0,0.4); }
+[data-theme="light"] .clock-date                  { color: rgba(0,0,0,0.5); }
+
+
+/* =============================================================================
+   12. APP — MUSIC & MINI PLAYER
+============================================================================= */
+
+#music-window .window-header { background-color: transparent !important; border-bottom: 1px solid var(--border-subtle); }
+.music-window-glass { background: var(--bg-window) !important; backdrop-filter: blur(30px) saturate(200%) !important; -webkit-backdrop-filter: blur(30px) saturate(200%) !important; }
+
+/* --- Sidebar navigation --- */
+.music-sidebar    { width: 210px; background: var(--bg-sidebar); border-right: 1px solid var(--border-subtle); padding: 20px 10px; overflow-y: auto; -ms-overflow-style: none; scrollbar-width: none; transition: background 0.3s, border-color 0.3s; }
+.music-nav-title  { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin: 10px 15px 5px; letter-spacing: 0.5px; transition: color 0.3s; }
+.music-nav-item   { padding: 8px 15px; border-radius: 6px; color: var(--text-main); font-size: 13px; cursor: pointer; transition: .2s; display: flex; align-items: center; margin-bottom: 2px; }
+.music-nav-item:hover  { background: var(--hover-subtle); }
+.music-nav-item.active { background: rgba(250, 36, 60, 0.15); color: #fa243c; font-weight: 600; }
+
+/* --- Track list area --- */
+.music-main-area  { flex: 1; padding: 0; overflow-y: auto; padding-bottom: 95px; -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Sticky column header row */
+.music-track-header {
+  position: sticky;
+  top: -25px;
+  padding: 25px 15px 15px;
+  margin-bottom: 5px;
+  background: var(--bg-window) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 20px -10px rgba(0,0,0,0.2);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+.music-track-row                                   { display: flex; align-items: center; padding: 12px 17px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: all 0.2s; }
+.music-track-row:hover                             { background: var(--hover-subtle); }
+.music-track-row.playing                           { background: rgba(250, 36, 60, 0.1); }
+.music-track-row.playing .music-track-title-list   { color: #fa243c !important; font-weight: 600; }
+.music-track-num                                   { width: 30px; color: var(--text-muted); font-size: 13px; text-align: right; margin-right: 15px; flex-shrink: 0; transition: color 0.3s; }
+.music-track-info-list   { flex: 1; display: flex; flex-direction: column; overflow: hidden; margin-right: 15px; }
+.music-track-title-list  { color: var(--text-main); font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; transition: color 0.3s; }
+.music-track-artist-list { color: var(--text-muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s; }
+.music-track-album       { width: 25%; color: var(--text-muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; transition: color 0.3s; }
+.music-track-time        { width: 40px; color: var(--text-muted); font-size: 13px; text-align: right; margin-left: 10px; flex-shrink: 0; transition: color 0.3s; }
+.music-track-list-cover  { width: 36px; height: 36px; border-radius: 4px; background-size: cover; background-position: center; margin-right: 12px; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+.music-track-favorite    { width: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.music-track-favorite img        { width: 16px; height: 16px; opacity: 0.5; transition: all 0.2s ease; }
+.music-track-favorite:hover img  { opacity: 1; transform: scale(1.1); }
+.music-track-favorite img.is-fav { opacity: 1; }
+
+/* --- Bottom player bar --- */
+.music-player-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 85px;
+  background: var(--bg-window);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-top: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  z-index: 10;
+  transition: background 0.3s, border-color 0.3s;
+}
+.music-now-playing  { display: flex; align-items: center; width: 30%; overflow: hidden; padding-right: 15px; }
+.music-cover-art    { width: 48px; height: 48px; flex-shrink: 0; background: var(--hover-strong); border-radius: 6px; margin-right: 15px; background-size: cover; background-position: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: background-image 0.3s; }
+.music-track-info   { display: flex; flex-direction: column; overflow: hidden; white-space: nowrap; width: 100%; }
+.music-track-title  { color: var(--text-main); font-size: 14px; font-weight: 600; margin-bottom: 3px; display: inline-block; will-change: transform; transition: color 0.3s; }
+.music-track-artist { color: var(--text-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s; }
+
+/* Marquee scroll for long track titles */
+.marquee-scroll { animation: portaleDestraSinistra 10s linear infinite; }
+@keyframes portaleDestraSinistra {
+  0%, 15%    { transform: translateX(0); }
+  45%        { transform: translateX(130%); }
+  45.001%    { transform: translateX(-150%); }
+  75%, 100%  { transform: translateX(0); }
+}
+
+/* --- Transport controls --- */
+.music-controls-container { display: flex; flex-direction: column; align-items: center; width: 40%; }
+.music-controls           { display: flex; align-items: center; gap: 25px; margin-bottom: 8px; }
+.music-btn       { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; opacity: 0.8; transition: .2s, color 0.3s; padding: 0; width: 30px; text-align: center; }
+.music-btn:hover { opacity: 1; transform: scale(1.1); }
+.play-btn        { font-size: 32px; width: 40px; text-align: center; }
+
+/* Progress bar */
+.music-progress             { display: flex; align-items: center; gap: 12px; width: 100%; font-size: 11px; color: var(--text-muted); font-weight: 500; transition: color 0.3s; }
+.music-progress-bar-bg      { flex: 1; height: 4px; background: var(--border-strong); border-radius: 2px; cursor: pointer; position: relative; transition: background 0.3s; }
+.music-progress-bar-fill    { height: 100%; width: 0%; background: var(--accent-color); border-radius: 2px; position: relative; pointer-events: none; transition: width 0.1s linear, background 0.3s; }
+/* Scrubber thumb — visible only on hover */
+.music-progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  width: 10px;
+  height: 10px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s;
+  pointer-events: auto;
+}
+.music-progress:hover .music-progress-bar-fill::after            { transform: translateY(-50%) scale(1.2); }
+.music-progress:hover .music-progress-bar-fill::after:hover      { transform: translateY(-50%) scale(1.7); }
+.music-progress-bar-bg.dragging .music-progress-bar-fill::after  { transform: translateY(-50%) scale(1.7); cursor: grabbing; }
+
+/* Volume control */
+.music-volume  { width: 30%; display: flex; justify-content: flex-end; align-items: center; gap: 10px; color: var(--text-main); transition: color 0.3s; }
+.volume-slider { appearance: none; -webkit-appearance: none; width: 100px; height: 4px; border-radius: 2px; outline: none; cursor: pointer; }
+.volume-slider::-webkit-slider-thumb       { -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent-color); border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.1s, background 0.3s; }
+.volume-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+/* --- Album & Artist grid views --- */
+.album-grid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; padding: 15px; }
+.album-card  { background: transparent; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; }
+.album-card:hover  { background: var(--hover-bg); transform: translateY(-8px) scale(1.08); box-shadow: var(--shadow-menu); z-index: 10; }
+.album-card-cover  { width: 100%; aspect-ratio: 1 / 1; border-radius: 6px; background-size: cover; background-position: center; margin-bottom: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+.album-card-title  { color: var(--text-main); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; transition: color 0.3s; }
+.album-card-artist { color: var(--text-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s; }
+[data-theme="light"] .album-card:hover { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), 0 5px 15px rgba(0, 0, 0, 0.12); }
+
+.artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 15px; grid-auto-flow: dense; }
+.artist-card { position: relative; border-radius: 10px; overflow: hidden; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.artist-card:hover { transform: scale(1.03); z-index: 10; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.5), 0 8px 25px rgba(0,0,0,0.6); }
+.artist-card-bg    { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.4s ease; }
+.artist-card:hover .artist-card-bg { transform: scale(1.1); }
+.artist-card-name  { position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px 15px 12px; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%); color: white; font-size: 14px; font-weight: 700; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+[data-theme="light"] .artist-card:hover { box-shadow: 0 0 0 2px #202020, 0 0 25px rgba(196, 30, 63, 0.6), 0 8px 25px rgba(0, 0, 0, 0.3); }
+
+/* Artist card layout modifiers (Masonry-style spanning) */
+.artist-hero       { grid-column: span 2; grid-row: span 2; aspect-ratio: 1 / 1; }
+.artist-horizontal { grid-column: span 2; grid-row: span 1; aspect-ratio: 2 / 1; }
+.artist-vertical   { grid-column: span 1; grid-row: span 2; aspect-ratio: 1 / 2; }
+.artist-square     { grid-column: span 1; grid-row: span 1; aspect-ratio: 1 / 1; }
+
+/* --- Playlist creator modal --- */
+#playlist-creator-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+}
+.playlist-creator-core   { position: relative; width: 500px; height: 500px; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+#playlist-creator-title  { position: absolute; top: 20px; color: #fff; font-size: 18px; letter-spacing: 2px; text-transform: uppercase; }
+.playlist-creator-close  { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 24px; cursor: pointer; opacity: 0.5; transition: .2s; }
+.playlist-creator-close:hover { opacity: 1; transform: scale(1.2); }
+
+/* Orbiting track covers */
+#playlist-circle-container { position: relative; width: 300px; height: 300px; border-radius: 50%; }
+#playlist-circle-container:hover { animation-play-state: paused !important; }
+.circle-track-cover {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  border-radius: 20px;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  scale: 1;
+  transition: scale 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s, border-radius 0.2s;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+  will-change: transform, opacity, z-index, scale;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+#playlist-circle-container:hover .circle-track-cover { animation-play-state: paused !important; }
+.circle-track-cover:hover          { scale: 1; box-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 5px 20px rgba(0,0,0,0.6); filter: brightness(1.15); z-index: 10; }
+.circle-track-cover.selected       { scale: 1; box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 25px rgba(255,255,255,0.6); border-radius: 20px; filter: brightness(1.1); }
+.circle-track-cover.selected:hover { scale: 1; box-shadow: 0 0 0 2px #fff, 0 0 35px rgba(255,255,255,0.8); filter: brightness(1.25); }
+.circle-track-title { position: absolute; top: 110%; left: 50%; transform: translateX(-50%); width: 100px; text-align: center; font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0,0,0,0.8); pointer-events: none; transition: all 0.3s ease; }
+.circle-track-cover.selected .circle-track-title { color: #fff; font-weight: 700; }
+
+/* Liquid glass "Create playlist" CTA */
+.liquid-glass-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  padding: 18px 45px;
+  border-radius: 50px;
+  background: rgba(25, 25, 28, 0.4);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 50;
+  overflow: hidden;
+}
+.liquid-glass-btn::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%); pointer-events: none; border-radius: 50px; }
+.liquid-glass-btn:hover   { background: rgba(255, 4, 54, 0.9); border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 5px 15px rgb(143, 3, 31), inset 0 1px 0 rgba(255, 255, 255, 0.3); transform: translate(-50%, -50%) scale(1.05); letter-spacing: 3px; color: #fff; }
+.liquid-glass-btn:active  { transform: translate(-50%, -50%) scale(0.95); background: #ff0436; box-shadow: 0 10px 20px rgba(255, 4, 54, 0.3); transition: all 0.1s; }
+
+/* Drag-to-reorder playlist tiles */
+.playlist-drag-item { transition: transform 0.2s, box-shadow 0.2s, background 0.3s, border-color 0.3s; }
+
+/* --- Floating mid-screen mini player (bottom-left overlay) --- */
+#mid-music-player {
+  position: fixed;
+  user-select: none;
+  bottom: 80px;
+  left: 20px;
+  width: 250px;
+  height: 380px;
+  border-radius: 20px;
+  display: none;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px 15px 15px 15px;
+  z-index: 9999;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+}
+#mid-music-player.show { display: flex; opacity: 1; transform: translateY(0) scale(1); }
+#mid-player-bg         { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; z-index: 1; transition: background-image 0.5s ease; }
+#mid-player-overlay    { background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0) 55%); position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+#mid-player-content    { position: relative; z-index: 3; display: flex; flex-direction: column; gap: 4px; }
+#mid-player-title      { color: #fff; font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 4px rgba(0,0,0,0.5); letter-spacing: -0.5px; }
+#mid-player-artist     { color: rgba(255,255,255,0.7); font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#mid-player-controls   { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-top: -10px; }
+.mid-btn               { color: #fff; font-size: 24px; cursor: pointer; transition: transform 0.1s, color 0.2s; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+.mid-btn:hover         { transform: scale(1.15); color: var(--accent-color, #0a84ff); }
+.mid-btn:active        { transform: scale(0.9); }
+.mid-btn.play-btn      { font-size: 40px; }
+
+/* Traffic-light close button for mini player */
+#mid-close-btn { position: absolute; top: 15px; left: 15px; width: 12px; height: 12px; background: #ff5f56; border-radius: 50%; border: 1px solid #e0443e; cursor: pointer; z-index: 10; transition: background 0.2s, transform 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+#mid-close-btn:hover  { background: #ff756d; }
+#mid-close-btn:active { background: #bf4b45; transform: scale(0.9); }
+
+/* Active cover glow (applied by JS when track changes) */
+.cover-active-glow { box-shadow: 0 0 20px 5px rgba(10, 132, 255, 0.7); transform: scale(0.95); border: 2px solid rgba(255, 255, 255, 0.8); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+
+/* Progress and volume rows share the same 3-column grid: icon | track | label */
+#mid-progress-container,
+#mid-player-volume-container { display: grid !important; grid-template-columns: 25px 1fr 25px !important; align-items: center; gap: 8px; width: 100%; padding: 0 10px !important; margin-top: 4px !important; }
+#mid-time-curr, #mid-volume-icon { text-align: right; font-size: 10px; color: rgb(255, 255, 255); margin: 0 !important; opacity: 0.8; }
+#mid-time-tot  { text-align: left; font-size: 10px; color: rgb(255, 255, 255); }
+#mid-progress-bg   { height: 3px !important; background: rgba(255,255,255,0.2); border-radius: 2px; cursor: pointer; position: relative; width: 100%; }
+#mid-progress-fill { height: 100%; background: #0a84ff; border-radius: 2px; position: absolute; top: 0; left: 0; pointer-events: none; }
+.mid-volume-slider { width: 100% !important; appearance: none; -webkit-appearance: none; height: 3px !important; border-radius: 2px; outline: none; cursor: pointer; margin: 0 !important; background: rgba(255,255,255,0.2); }
+
+/* --- Top-bar mini player widget (animated slide-in) --- */
+.mini-player-glass {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  max-width: 0;
+  opacity: 0;
+  margin-right: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: scale(0.6) translateY(10px);
+  transition: all 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+.mini-player-glass.show-widget { max-width: 300px; opacity: 1; margin-right: 20px; pointer-events: auto; transform: scale(1) translateY(0); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+#player-cover, #mini-music-cover { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; border: 0.5px solid var(--border-strong); }
+#player-cover:hover, #mini-music-cover:hover   { transform: scale(1) translateY(0px); box-shadow: 0 30px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-strong); filter: brightness(1.10) contrast(1.05); z-index: 10; }
+#player-cover:active, #mini-music-cover:active { transform: scale(1); box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border-subtle); filter: brightness(0.9); transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); }
+
+/* --- Light Mode: Music app & playlist creator --- */
+[data-theme="light"] #playlist-creator-overlay  { background: rgba(255, 255, 255, 0.75); }
+[data-theme="light"] #playlist-creator-title,
+[data-theme="light"] .playlist-creator-close    { color: #000; }
+[data-theme="light"] .circle-track-title        { color: rgba(0, 0, 0, 0.6); text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9); }
+[data-theme="light"] .circle-track-cover.selected .circle-track-title { color: #000; }
+[data-theme="light"] .circle-track-cover              { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); }
+[data-theme="light"] .circle-track-cover:hover        { box-shadow: 0 0 15px rgba(0, 0, 0, 0.1), 0 10px 30px rgba(0, 0, 0, 0.25); }
+[data-theme="light"] .circle-track-cover.selected     { box-shadow: 0 0 0 3px #ff0436, 0 0 25px rgba(255, 4, 54, 0.5); }
+[data-theme="light"] .circle-track-cover.selected:hover { box-shadow: 0 0 0 3px #ff0436, 0 0 35px rgba(255, 4, 54, 0.7); }
+[data-theme="light"] .liquid-glass-btn         { background: rgba(255, 255, 255, 0.6); color: #000; border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8); }
+[data-theme="light"] .liquid-glass-btn:hover   { background: rgba(255, 4, 54, 0.9); color: #fff; border-color: rgba(255, 4, 54, 0.4); box-shadow: 0 8px 20px rgba(255, 4, 54, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+[data-theme="light"] #playlist-selection-list > div:first-child { background: rgba(255, 255, 255, 0.95) !important; color: #ff0436 !important; border-bottom-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .playlist-drag-item       { background: #ffffff !important; border-color: rgba(0, 0, 0, 0.08); border-radius: 10px !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important; transform: translateY(0); transition: transform 0.2s, box-shadow 0.2s !important; }
+[data-theme="light"] .playlist-drag-item:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05) !important; }
+[data-theme="light"] .playlist-drag-item div > div:first-child { color: #000 !important; }
+[data-theme="light"] .playlist-drag-item div > div:last-child  { color: rgba(0, 0, 0, 0.6) !important; }
+[data-theme="light"] .playlist-drag-item > div:last-child      { color: rgba(0, 0, 0, 0.4) !important; }
+[data-theme="light"] #mini-music-title { color: #000 !important; text-shadow: none !important; font-weight: 600; }
+[data-theme="light"] .mini-player-glass [onclick*="musicPrev"],
+[data-theme="light"] .mini-player-glass [onclick*="musicTogglePlay"],
+[data-theme="light"] .mini-player-glass [onclick*="musicNext"],
+[data-theme="light"] .mini-player-glass .music-btn,
+[data-theme="light"] #mini-play-btn { color: #000 !important; transition: color 0.2s ease, transform 0.2s ease !important; }
+[data-theme="light"] .mini-player-glass [onclick*="musicPrev"]:hover,
+[data-theme="light"] .mini-player-glass [onclick*="musicTogglePlay"]:hover,
+[data-theme="light"] .mini-player-glass [onclick*="musicNext"]:hover,
+[data-theme="light"] .mini-player-glass .music-btn:hover,
+[data-theme="light"] #mini-play-btn:hover { color: #ff0436 !important; transform: scale(1.1) !important; }
+[data-theme="light"] #player-cover:hover,
+[data-theme="light"] #mini-music-cover:hover { box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--border-strong); }
+
+
+/* =============================================================================
+   13. APP — REMINDERS
+============================================================================= */
+
+.reminders-window-glass { background: rgba(30, 30, 32, 0.85) !important; backdrop-filter: blur(30px) saturate(180%) !important; -webkit-backdrop-filter: blur(30px) saturate(180%) !important; }
+.reminders-sidebar { width: 220px; background: rgba(10, 10, 12, 0.4); border-right: 1px solid rgba(255,255,255,0.05); padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+
+/* Smart filter cards grid */
+.rem-smart-grid         { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rem-smart-card         { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px; cursor: pointer; transition: .2s; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+.rem-smart-card:hover   { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+.rem-card-icon          { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+.rem-card-info          { display: flex; justify-content: space-between; align-items: center; }
+.rem-card-title         { font-size: 12px; font-weight: 600; color: #a1a1a6; }
+.rem-card-count         { font-size: 20px; font-weight: 700; color: #fff; }
+.rem-list-header        { font-size: 11px; font-weight: 700; color: #666; margin: 5px 0 0 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.rem-list-item          { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; color: #ddd; font-size: 13px; font-weight: 500; transition: .2s; }
+.rem-list-item:hover    { background: rgba(255,255,255,0.05); }
+.rem-list-item.active   { background: rgba(10, 132, 255, 0.2); color: #0a84ff; }
+
+/* Main task view */
+.reminders-main         { flex: 1; display: flex; flex-direction: column; padding: 20px 30px; position: relative; }
+#rem-current-list-title { font-size: 32px; font-weight: 700; color: #0a84ff; margin: 0 0 20px 0; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: color 0.3s; }
+#rem-tasks-container    { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.rem-task-row           { display: flex; align-items: center; gap: 12px; padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: .2s; }
+.rem-checkbox           { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+.rem-checkbox:hover     { border-color: #0a84ff; background: rgba(10, 132, 255, 0.1); }
+.rem-checkbox.checked   { background: #0a84ff; border-color: #0a84ff; }
+.rem-checkbox.checked::after { content: '✓'; color: #fff; font-size: 14px; font-weight: bold; }
+.rem-task-text               { flex: 1; font-size: 14px; color: #fff; font-weight: 400; outline: none; border: none; background: transparent; transition: all 0.3s; }
+.rem-task-text.completed     { color: #666; text-decoration: line-through; opacity: 0.6; }
+.rem-add-task-bar            { display: flex; align-items: center; gap: 12px; padding: 15px 5px 5px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); }
+
+/* Inspector "i" button (revealed on row hover) */
+.rem-info-btn       { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2); color: #0a84ff; font-family: Georgia, serif; font-style: italic; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: all 0.2s; font-size: 13px; flex-shrink: 0; }
+.rem-task-row:hover .rem-info-btn  { opacity: 1; }
+.rem-info-btn:hover { background: rgba(10,132,255,0.15); border-color: #0a84ff; }
+
+/* Task content and metadata badges */
+.rem-task-content       { flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.rem-badges-container   { display: flex; gap: 6px; margin-top: 4px; padding-left: 2px; }
+.rem-badge              { font-size: 10px; color: #a1a1a6; background: rgba(255,255,255,0.06); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.rem-badge.overdue      { color: #ff453a; background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.2); }
+.rem-card-icon-img-cont { width: 28px; height: 28px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; }
+.rem-card-icon-img      { width: 100%; height: 100%; object-fit: contain; }
+
+/* Add task input area */
+.rem-add-task-cont { padding: 15px 5px 5px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.rem-add-btn-glass {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #0a84ff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease-out;
+  outline: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.rem-add-btn-glass::before { content: '+'; font-size: 24px; font-weight: 300; line-height: 1; margin-top: -2px; }
+.rem-add-btn-glass:hover   { background: rgba(10, 132, 255, 0.15); border-color: rgba(10, 132, 255, 0.5); transform: scale(1.08); box-shadow: 0 6px 12px rgba(0,122,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
+.rem-add-btn-glass:active  { transform: scale(0.92); }
+#rem-new-task-input        { flex: 1; background: transparent; border: none; color: #fff; font-size: 14px; outline: none; padding: 8px 0; }
+
+/* --- Light Mode: reminders --- */
+[data-theme="light"] .reminders-window-glass    { background: rgba(240, 240, 245, 0.85) !important; }
+[data-theme="light"] .reminders-sidebar         { background: rgba(255, 255, 255, 0.5); border-right-color: rgba(0, 0, 0, 0.1); }
+[data-theme="light"] .reminders-sidebar h4      { color: rgba(0, 0, 0, 0.5) !important; }
+[data-theme="light"] .reminders-sidebar span[onclick] { color: #000 !important; }
+[data-theme="light"] .rem-smart-card            { background: #ffffff; border-color: rgba(0, 0, 0, 0.08); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03); }
+[data-theme="light"] .rem-smart-card:hover      { background: #f9f9f9; }
+[data-theme="light"] .rem-card-title            { color: rgba(0, 0, 0, 0.5); }
+[data-theme="light"] .rem-card-count            { color: #000; }
+[data-theme="light"] .rem-list-header           { color: rgba(0, 0, 0, 0.4); }
+[data-theme="light"] .rem-list-item             { color: rgba(0, 0, 0, 0.7); }
+[data-theme="light"] .rem-list-item:hover       { background: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .rem-list-item.active      { background: rgba(10, 132, 255, 0.15); color: #0a84ff; }
+[data-theme="light"] .rem-task-row              { border-bottom-color: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .rem-task-text             { color: #000; }
+[data-theme="light"] .rem-task-text.completed   { color: rgba(0, 0, 0, 0.4); }
+[data-theme="light"] .rem-checkbox              { border-color: rgba(0, 0, 0, 0.2); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .rem-checkbox:hover        { border-color: #0a84ff; background: rgba(10, 132, 255, 0.1); }
+[data-theme="light"] .rem-checkbox.checked      { background: #0a84ff; border-color: #0a84ff; }
+[data-theme="light"] .rem-info-btn              { border-color: rgba(0, 0, 0, 0.15); }
+[data-theme="light"] .rem-info-btn:hover        { background: rgba(10, 132, 255, 0.1); border-color: #0a84ff; }
+[data-theme="light"] .rem-badge                 { color: rgba(0, 0, 0, 0.6); background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .rem-badge.overdue         { color: #ff3b30; background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.2); }
+[data-theme="light"] .rem-add-task-bar,
+[data-theme="light"] .rem-add-task-cont         { border-top-color: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] #rem-new-task-input        { color: #000; }
+[data-theme="light"] #rem-new-task-input::placeholder { color: rgba(0, 0, 0, 0.4); }
+[data-theme="light"] .rem-add-btn-glass         { background: rgba(0, 0, 0, 0.03); border-color: rgba(0, 0, 0, 0.1); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .rem-add-btn-glass:hover   { background: rgba(10, 132, 255, 0.1); border-color: rgba(10, 132, 255, 0.3); }
+
+/* --- Light Mode: Reminder inspector panel --- */
+[data-theme="light"] #rem-inspector-overlay     { background: rgba(255, 255, 255, 0.6) !important; }
+[data-theme="light"] #rem-inspector             { background: rgba(240, 240, 245, 0.95) !important; border: 1px solid rgba(0, 0, 0, 0.15) !important; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255,255,255,0.5) inset !important; }
+[data-theme="light"] #rem-inspector h3,
+[data-theme="light"] #rem-inspector label,
+[data-theme="light"] #rem-inspector .insp-label { color: rgba(0, 0, 0, 0.6) !important; }
+[data-theme="light"] #rem-insp-title,
+[data-theme="light"] #rem-insp-notes,
+[data-theme="light"] #rem-insp-date,
+[data-theme="light"] #rem-insp-location,
+[data-theme="light"] #rem-insp-list             { background: #ffffff !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; color: #000 !important; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03) !important; }
+[data-theme="light"] #rem-inspector input::placeholder,
+[data-theme="light"] #rem-inspector textarea::placeholder { color: rgba(0, 0, 0, 0.4) !important; }
+[data-theme="light"] #rem-inspector input:focus,
+[data-theme="light"] #rem-inspector textarea:focus,
+[data-theme="light"] #rem-inspector select:focus { border-color: #0a84ff !important; box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2) !important; }
+[data-theme="light"] #rem-insp-list option      { background: #ffffff !important; color: #000 !important; }
+[data-theme="light"] #rem-inspector button[onclick*="closeRemInspector"]       { background: rgba(0, 0, 0, 0.05) !important; color: #000 !important; border-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] #rem-inspector button[onclick*="closeRemInspector"]:hover { background: rgba(0, 0, 0, 0.1) !important; }
+
+
+/* =============================================================================
+   14. APP — MAPS
+============================================================================= */
+
+.maps-window-glass { background: var(--bg-window) !important; backdrop-filter: blur(30px) saturate(180%) !important; -webkit-backdrop-filter: blur(30px) saturate(180%) !important; transition: background 0.3s; }
+.maps-sidebar      { width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; z-index: 10; box-shadow: 2px 0 15px rgba(0,0,0,0.1); transition: background 0.3s, border-color 0.3s; }
+
+/* Search field */
+.maps-search-container   { padding: 15px; border-bottom: 1px solid var(--border-subtle); transition: border-color 0.3s; }
+#maps-search-input       { width: 100%; background: var(--hover-bg); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 10px 15px; border-radius: 10px; font-size: 13px; outline: none; transition: all 0.2s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+#maps-search-input:focus { background: var(--bg-window); border-color: #0a84ff; box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.3), inset 0 2px 5px rgba(0,0,0,0.05); }
+
+/* Saved places list */
+.maps-section-title   { font-size: 11px; font-weight: 700; color: var(--text-muted); margin: 15px 15px 5px; text-transform: uppercase; letter-spacing: 0.5px; transition: color 0.3s; }
+.maps-list            { flex: 1; overflow-y: auto; padding: 0 10px; }
+.maps-list-item       { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin-bottom: 2px; }
+.maps-list-item:hover { background: var(--hover-strong); transform: translateX(4px); }
+.maps-icon-circle     { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.maps-item-info       { display: flex; flex-direction: column; overflow: hidden; }
+.maps-item-title      { font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s; }
+.maps-item-sub        { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s; }
+
+/* Iframe map area */
+.maps-main   { flex: 1; position: relative; background: var(--bg-window); overflow: hidden; transition: background 0.3s; }
+#maps-iframe { border: none; pointer-events: auto; background-color: #f8f9fa; width: 100%; height: 100%; }
+
+/* Floating zoom controls */
+.maps-floating-controls { position: absolute; bottom: 25px; right: 25px; background: var(--bg-window); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border-strong); border-radius: 10px; display: flex; flex-direction: column; padding: 4px; box-shadow: var(--shadow-window); z-index: 20; transition: background 0.3s, border-color 0.3s; }
+.maps-float-btn         { background: transparent; border: none; color: var(--text-main); width: 32px; height: 32px; border-radius: 6px; font-size: 18px; font-weight: 300; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .2s; }
+.maps-float-btn:hover   { background: var(--hover-strong); }
+.maps-float-btn:active  { background: var(--border-subtle); transform: scale(0.9); }
+
+/* --- Light Mode: maps --- */
+#maps-window .window-header { border-bottom: 1px solid var(--border-subtle) !important; background: var(--bg-window) !important; }
+[data-theme="light"] #maps-window .window-title   { color: #000 !important; }
+/* Accent colour override: red focus ring on light mode */
+[data-theme="light"] #maps-search-input:focus { border-color: #ff0436; box-shadow: 0 0 0 3px rgba(255, 4, 54, 0.3), inset 0 2px 5px rgba(0,0,0,0.05); }
+
+
+/* =============================================================================
+   15. APP — NOTES & TERMINAL
+============================================================================= */
+
+/* --- Notes (rich text editor) --- */
+.editor-toolbar { display: flex; gap: 12px; padding: 10px 15px; background-color: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.editor-toolbar button {
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.editor-toolbar button:hover  { background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.05)); border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5); transform: translateY(-1px); }
+.editor-toolbar button:active { transform: translateY(1px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.3); background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.1); }
+#notes-textarea               { width: 100%; height: 100%; border: none; padding: 15px; background: rgba(0, 0, 0, 0.2); color: #fff; font-family: "SF Mono", "Menlo", "Consolas", monospace; font-size: 13px; line-height: 1.5; resize: none; outline: none; }
+
+/* --- Terminal (VT100-style dark shell) --- */
+.term-bg        { background-color: rgba(20, 20, 20, 0.95); color: #4af626; font-family: "Courier New", Courier, monospace; flex-direction: column; padding: 10px; font-size: 14px; }
+#term-output    { flex-grow: 1; overflow-y: auto; margin-bottom: 5px; word-break: break-all; }
+.term-input-line { display: flex; gap: 8px; align-items: center; }
+.prompt         { font-weight: bold; }
+#term-input     { background: transparent; border: none; color: #4af626; font-family: "Courier New", Courier, monospace; outline: none; flex-grow: 1; font-size: 14px; }
+
+/* --- Light Mode: notes --- */
+[data-theme="light"] .editor-toolbar                   { border-bottom-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] .editor-toolbar button            { color: #000 !important; text-shadow: none !important; background: linear-gradient(135deg, #ffffff, #f0f0f5) !important; border-color: rgba(0, 0, 0, 0.15) !important; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05), inset 0 1px 1px #ffffff !important; }
+[data-theme="light"] .editor-toolbar button:hover      { background: linear-gradient(135deg, #f9f9f9, #e5e5ea) !important; border-color: rgba(0, 0, 0, 0.25) !important; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), inset 0 1px 2px #ffffff !important; }
+[data-theme="light"] .editor-toolbar button:active     { background: #e5e5ea !important; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] #notes-textarea                   { background: #ffffff !important; color: #000 !important; }
+
+/* --- Light Mode: terminal (Ocean Blue profile) --- */
+[data-theme="light"] .term-bg   { background-color: #012456 !important; color: #ffffff !important; }
+[data-theme="light"] #term-input { color: #ffffff !important; }
+[data-theme="light"] .term-bg ::selection,
+[data-theme="light"] #term-input::selection { background: rgba(255, 255, 255, 0.3) !important; }
